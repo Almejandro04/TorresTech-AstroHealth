@@ -1,28 +1,31 @@
 # AstroHealth API and Data Contract
 
 Version: **0.1.0**  
-Status: **Proposed for review by Jorge and Jhonatan; data review by Ismael pending.**  
+Status: **Contract prepared; product decisions recorded; pull request peer review pending.**  
 Tracking issue: [CORE-01 / #1](https://github.com/Almejandro04/TorresTech-AstroHealth/issues/1)
 
 This specification defines the MVP interface between the React frontend, FastAPI backend, and data preparation work. It specifies behavior; it does not implement the application. Changes to field names, units, enum values, or response shapes require updates to this document and its fixtures in the same pull request before dependent work merges.
 
-## 1. Proposed decisions to audit together
+## 1. Decisions and implementation conventions
 
 | Decision | Proposed v0.1.0 behavior | Reason / review owner |
 | --- | --- | --- |
 | Mission profiles | Fictional astronauts; demonstration endpoints accept synthetic observations only | All three: avoid presenting terrestrial subjects as astronauts |
 | Mission day | Day 1 is `mission_start_date`, using UTC calendar dates | Jorge + Jhonatan: identical labels on cards, charts, and imports |
 | Daily information | Journal entries are separate from point-in-time vital readings | All three: different observation cadence |
-| Mood | Integer 1–5: very low, low, neutral, high, very high | Jorge + Jhonatan: proposed product scale, not a validated clinical score |
-| Fatigue | Deferred from the v0.1.0 wire format | All three: keep the first contract small; add by versioned revision if needed |
+| Dashboard values | Latest non-null value per indicator, with that value's own timestamp and provenance | Confirmed product decision in the working session |
+| Mood | Integer 1–5: very low, low, neutral, high, very high | Confirmed; a product self-report scale, not a validated clinical score |
+| Fatigue | Deferred from the v0.1.0 wire format | Confirmed; keep sleep, mood, and notes in the initial journal |
+| Interface language | English labels, help, feedback, and error recovery instructions | Confirmed; API identifiers and technical documentation remain English |
+| Journal corrections | Edit the existing daily entry, retain its ID, and save explicitly | Confirmed; preserve a single entry per astronaut/day |
 | Journal history | Add `GET /api/astronauts/{id}/journal` | Jorge: sleep charts need daily history; summary alone is insufficient |
 | Missing data | Explicit JSON `null`; never substitute zero, normal, or a previous measurement | All three |
 | Alert availability | Distinguish `not_implemented`, `insufficient_data`, and `available` | Jhonatan: an empty list must not imply successful analysis |
-| Alert interaction | Read-only API; engine maintains `active` / `resolved` | Jorge + Jhonatan: no acknowledge/resolve UI without a new endpoint |
+| Alert interaction | Consult and understand; read-only API; engine maintains `active` / `resolved` | Confirmed; no reviewed/acknowledged state or manual resolution action in this MVP |
 | Replay | Observation-time cutoff `as_of`, also returned in responses | Jhonatan: later observations must not leak into an earlier demo day |
 | Write retries | Exact reading retry returns existing record; conflicting duplicate returns 409; journal is one updatable entry per day | Jhonatan + Ismael |
 
-These are proposed engineering/product choices. No teammate review, implementation, scientific validation, or clinical endorsement is implied by their presence here.
+The six rows marked confirmed record decisions supplied during the working session. Other rows are documented engineering conventions for peer review, not a claim that every line has already been approved. No application implementation, scientific validation, or clinical endorsement is implied. Further product changes are discussed before changing their wire format; ordinary implementation choices follow this contract.
 
 ## 2. Conventions and validation
 
@@ -64,7 +67,7 @@ Profiles are seeded locally. Profile creation/editing endpoints are outside this
 
 At least one of the three vital measurements must be non-null. A missing observation is absent; a partially observed record uses null for the missing metrics. Sleep and mood do not appear in a vital reading.
 
-The output `HealthReading` contains every input field plus server-generated `reading_id` and the URL's `astronaut_id`. Latest reading means the latest stored record by observation time, including its explicit missing fields; do not silently forward-fill older values. Frontend cards display that record's timestamp and unavailable fields honestly.
+The output `HealthReading` contains every input field plus server-generated `reading_id` and the URL's `astronaut_id`. The latest raw record retains its explicit missing fields. Dashboard cards instead use the per-indicator `latest_metrics` snapshots in section 3.5. An older non-null value retains its original observation time and must not be relabeled as a new measurement. Charts keep missing values as gaps.
 
 ### 3.3 HealthJournalInput / HealthJournal
 
@@ -102,7 +105,21 @@ Alerts are generated by the backend, not posted by the frontend. All fields belo
 
 Return only alerts whose detection time is at or before `as_of`. An alert resolved after that cutoff appears active with `resolved_at: null` in that earlier observation view. Deduplicate a rule event using its documented event key; replay must not create unlimited copies. No lifecycle mutation endpoint is included. Actual thresholds, formulas, minimum-history policies, and rule validation belong to BACKEND-04/05 and DATA-06; this contract does not declare them medically valid.
 
-### 3.5 BaselineMetric and HealthSummary
+### 3.5 MetricSnapshot, BaselineMetric, and HealthSummary
+
+Each dashboard indicator uses a `MetricSnapshot`. Select its most recent non-null observation at or before `as_of`, independently of the other indicators. Vital indicators come from readings; sleep and mood come from journal entries. Break timestamp ties deterministically by record ID. Every snapshot includes all these fields:
+
+| Field | JSON type | Rule |
+| --- | --- | --- |
+| `value` | number or null | Same type/scale as the indicator; mood remains an integer |
+| `unit` | string | `beats/min`, `%`, `breaths/min`, `hours`, or `score`, matching the indicator |
+| `timestamp` | string or null | Actual UTC time of the selected non-null observation |
+| `mission_day` | integer or null | Day of that observation, not the current summary day |
+| `measurement_context` | string or null | Original vital context; null for sleep/mood |
+| `source_type`, `source_id` | string or null | Original provenance, not a new synthetic observation |
+| `record_id` | string or null | Corresponding reading/journal ID for traceability |
+
+If no non-null observation exists, `value` and every metadata field except `unit` are null. Keep the known unit. If the selected value predates the latest raw record or selected mission day, display its own day/time visibly. Do not claim it was freshly measured or assign an invented clinical freshness threshold. History endpoints and charts must not forward-fill gaps just because cards show a prior observed value.
 
 `BaselineMetric` has these required fields:
 
@@ -125,6 +142,7 @@ Missing baseline values must not imply zero. Baselines for distinct astronauts, 
 | `mission_day` | integer or null | Day at `as_of`; null when no observations and no explicit cutoff |
 | `latest_reading` | HealthReading or null | Latest record at/before cutoff |
 | `latest_journal` | HealthJournal or null | Latest daily entry at/before cutoff; keep its own day visible |
+| `latest_metrics` | object | Five MetricSnapshot keys: the three vital metric names, `sleep_hours_last_night`, and `mood_score`; dashboard cards consume these |
 | `baselines` | object | The four keys above, each a BaselineMetric |
 | `alert_summary` | object | `evaluation_status`, `active_count`, `highest_severity`, and `recent` |
 
@@ -220,7 +238,16 @@ Fixtures are hand-authored interface examples. Alert/baseline values illustrate 
 
 CORE-01 remains open until the contract is reviewed, agreed, and merged through its documentation pull request. No application feature is completed by this document alone.
 
-## 7. Implementation references
+## 7. Usability requirements linked to this contract
+
+See [UX requirements and acceptance scenarios](ux_requirements.md). That document applies the user-supplied Nielsen heuristics and Laws of UX references to AstroHealth's own interaction requirements. It is a specification for subsequent frontend/integration issues, not a claim that a UI has been implemented or tested.
+
+- The demo interface is English. Stable API codes and `details[].field` support clear field-specific messages rather than displaying raw exceptions or wire-format names.
+- Each indicator shows the selected value's unit, observation day/time, and provenance. Missing values, missing history, unavailable analysis, and request errors have distinct states.
+- Editing a journal uses prefilled values with explicit Save changes and Cancel actions. Success is shown only after a successful response; failure preserves input and offers retry. Cancellation of unsaved edits does not undo a previous server save.
+- Alerts expose their explanation and evidence with text/icon severity cues. User controls do not resolve, acknowledge, hide, or delete the engine's alert condition.
+
+## 8. Implementation references
 
 - [FastAPI error handling and custom validation handlers](https://fastapi.tiangolo.com/tutorial/handling-errors/)
 - [RFC 3339 timestamp format](https://www.rfc-editor.org/rfc/rfc3339)

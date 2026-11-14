@@ -392,6 +392,58 @@
               "source_type": "synthetic",
               "source_id": "SYN-CORE-001"
             },
+            "latest_metrics": {
+              "heart_rate_bpm": {
+                "value": 72,
+                "unit": "beats/min",
+                "timestamp": "2026-11-05T12:00:00Z",
+                "mission_day": 5,
+                "measurement_context": "rest",
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "READING-0005"
+              },
+              "spo2_percent": {
+                "value": 98,
+                "unit": "%",
+                "timestamp": "2026-11-05T12:00:00Z",
+                "mission_day": 5,
+                "measurement_context": "rest",
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "READING-0005"
+              },
+              "respiratory_rate_bpm": {
+                "value": 16,
+                "unit": "breaths/min",
+                "timestamp": "2026-11-05T12:00:00Z",
+                "mission_day": 5,
+                "measurement_context": "rest",
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "READING-0005"
+              },
+              "sleep_hours_last_night": {
+                "value": 7.5,
+                "unit": "hours",
+                "timestamp": "2026-11-05T08:00:00Z",
+                "mission_day": 5,
+                "measurement_context": null,
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "JOURNAL-0005"
+              },
+              "mood_score": {
+                "value": 4,
+                "unit": "score",
+                "timestamp": "2026-11-05T08:00:00Z",
+                "mission_day": 5,
+                "measurement_context": null,
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "JOURNAL-0005"
+              }
+            },
             "baselines": {
               "heart_rate_bpm": {
                 "status": "available",
@@ -489,6 +541,58 @@
               "source_type": "synthetic",
               "source_id": "SYN-CORE-001"
             },
+            "latest_metrics": {
+              "heart_rate_bpm": {
+                "value": 84,
+                "unit": "beats/min",
+                "timestamp": "2026-11-07T12:00:00Z",
+                "mission_day": 7,
+                "measurement_context": "rest",
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "READING-0007"
+              },
+              "spo2_percent": {
+                "value": 97,
+                "unit": "%",
+                "timestamp": "2026-11-07T12:00:00Z",
+                "mission_day": 7,
+                "measurement_context": "rest",
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "READING-0007"
+              },
+              "respiratory_rate_bpm": {
+                "value": 16,
+                "unit": "breaths/min",
+                "timestamp": "2026-11-06T12:00:00Z",
+                "mission_day": 6,
+                "measurement_context": "rest",
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "READING-0006"
+              },
+              "sleep_hours_last_night": {
+                "value": 5.5,
+                "unit": "hours",
+                "timestamp": "2026-11-07T08:00:00Z",
+                "mission_day": 7,
+                "measurement_context": null,
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "JOURNAL-0007"
+              },
+              "mood_score": {
+                "value": 2,
+                "unit": "score",
+                "timestamp": "2026-11-07T08:00:00Z",
+                "mission_day": 7,
+                "measurement_context": null,
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "JOURNAL-0007"
+              }
+            },
             "baselines": {
               "heart_rate_bpm": {
                 "status": "available",
@@ -564,6 +668,155 @@
       }
     },
     {
+      "name": "summary_before_later_same_day_reading",
+      "invalid_input": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/astronauts/AST-001/summary",
+        "query": {
+          "as_of": "2026-11-07T09:00:00Z"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": {
+            "astronaut": {
+              "astronaut_id": "AST-001",
+              "name": "Demo Astronaut 1",
+              "is_fictional": true,
+              "mission_start_date": "2026-11-01",
+              "planned_duration_days": 30
+            },
+            "mission_day": 7,
+            "latest_reading": {
+              "reading_id": "READING-0006",
+              "astronaut_id": "AST-001",
+              "timestamp": "2026-11-06T12:00:00Z",
+              "mission_day": 6,
+              "heart_rate_bpm": 78,
+              "spo2_percent": 97,
+              "respiratory_rate_bpm": 16,
+              "measurement_context": "rest",
+              "source_type": "synthetic",
+              "source_id": "SYN-CORE-001"
+            },
+            "latest_journal": {
+              "journal_id": "JOURNAL-0007",
+              "astronaut_id": "AST-001",
+              "timestamp": "2026-11-07T08:00:00Z",
+              "mission_day": 7,
+              "sleep_hours_last_night": 5.5,
+              "mood_score": 2,
+              "notes": null,
+              "source_type": "synthetic",
+              "source_id": "SYN-CORE-001"
+            },
+            "latest_metrics": {
+              "heart_rate_bpm": {
+                "value": 78,
+                "unit": "beats/min",
+                "timestamp": "2026-11-06T12:00:00Z",
+                "mission_day": 6,
+                "measurement_context": "rest",
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "READING-0006"
+              },
+              "spo2_percent": {
+                "value": 97,
+                "unit": "%",
+                "timestamp": "2026-11-06T12:00:00Z",
+                "mission_day": 6,
+                "measurement_context": "rest",
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "READING-0006"
+              },
+              "respiratory_rate_bpm": {
+                "value": 16,
+                "unit": "breaths/min",
+                "timestamp": "2026-11-06T12:00:00Z",
+                "mission_day": 6,
+                "measurement_context": "rest",
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "READING-0006"
+              },
+              "sleep_hours_last_night": {
+                "value": 5.5,
+                "unit": "hours",
+                "timestamp": "2026-11-07T08:00:00Z",
+                "mission_day": 7,
+                "measurement_context": null,
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "JOURNAL-0007"
+              },
+              "mood_score": {
+                "value": 2,
+                "unit": "score",
+                "timestamp": "2026-11-07T08:00:00Z",
+                "mission_day": 7,
+                "measurement_context": null,
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "JOURNAL-0007"
+              }
+            },
+            "baselines": {
+              "heart_rate_bpm": {
+                "status": "available",
+                "value": 72,
+                "sample_count": 5,
+                "reference_start": "2026-11-01T00:00:00Z",
+                "reference_end": "2026-11-05T23:59:59Z",
+                "measurement_context": "rest",
+                "method": "fixture_reference_mean"
+              },
+              "spo2_percent": {
+                "status": "available",
+                "value": 98,
+                "sample_count": 5,
+                "reference_start": "2026-11-01T00:00:00Z",
+                "reference_end": "2026-11-05T23:59:59Z",
+                "measurement_context": "rest",
+                "method": "fixture_reference_mean"
+              },
+              "respiratory_rate_bpm": {
+                "status": "available",
+                "value": 16,
+                "sample_count": 5,
+                "reference_start": "2026-11-01T00:00:00Z",
+                "reference_end": "2026-11-05T23:59:59Z",
+                "measurement_context": "rest",
+                "method": "fixture_reference_mean"
+              },
+              "sleep_hours_last_night": {
+                "status": "available",
+                "value": 7.5,
+                "sample_count": 5,
+                "reference_start": "2026-11-01T00:00:00Z",
+                "reference_end": "2026-11-05T23:59:59Z",
+                "measurement_context": null,
+                "method": "fixture_reference_mean"
+              }
+            },
+            "alert_summary": {
+              "evaluation_status": "available",
+              "active_count": 0,
+              "highest_severity": null,
+              "recent": []
+            }
+          },
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": "2026-11-07T09:00:00Z"
+          }
+        }
+      }
+    },
+    {
       "name": "summary_before_analysis_is_implemented",
       "invalid_input": false,
       "request": {
@@ -607,6 +860,58 @@
               "notes": null,
               "source_type": "synthetic",
               "source_id": "SYN-CORE-001"
+            },
+            "latest_metrics": {
+              "heart_rate_bpm": {
+                "value": 84,
+                "unit": "beats/min",
+                "timestamp": "2026-11-07T12:00:00Z",
+                "mission_day": 7,
+                "measurement_context": "rest",
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "READING-0007"
+              },
+              "spo2_percent": {
+                "value": 97,
+                "unit": "%",
+                "timestamp": "2026-11-07T12:00:00Z",
+                "mission_day": 7,
+                "measurement_context": "rest",
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "READING-0007"
+              },
+              "respiratory_rate_bpm": {
+                "value": 16,
+                "unit": "breaths/min",
+                "timestamp": "2026-11-06T12:00:00Z",
+                "mission_day": 6,
+                "measurement_context": "rest",
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "READING-0006"
+              },
+              "sleep_hours_last_night": {
+                "value": 5.5,
+                "unit": "hours",
+                "timestamp": "2026-11-07T08:00:00Z",
+                "mission_day": 7,
+                "measurement_context": null,
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "JOURNAL-0007"
+              },
+              "mood_score": {
+                "value": 2,
+                "unit": "score",
+                "timestamp": "2026-11-07T08:00:00Z",
+                "mission_day": 7,
+                "measurement_context": null,
+                "source_type": "synthetic",
+                "source_id": "SYN-CORE-001",
+                "record_id": "JOURNAL-0007"
+              }
             },
             "baselines": {
               "heart_rate_bpm": {
@@ -681,6 +986,58 @@
             "mission_day": null,
             "latest_reading": null,
             "latest_journal": null,
+            "latest_metrics": {
+              "heart_rate_bpm": {
+                "value": null,
+                "unit": "beats/min",
+                "timestamp": null,
+                "mission_day": null,
+                "measurement_context": null,
+                "source_type": null,
+                "source_id": null,
+                "record_id": null
+              },
+              "spo2_percent": {
+                "value": null,
+                "unit": "%",
+                "timestamp": null,
+                "mission_day": null,
+                "measurement_context": null,
+                "source_type": null,
+                "source_id": null,
+                "record_id": null
+              },
+              "respiratory_rate_bpm": {
+                "value": null,
+                "unit": "breaths/min",
+                "timestamp": null,
+                "mission_day": null,
+                "measurement_context": null,
+                "source_type": null,
+                "source_id": null,
+                "record_id": null
+              },
+              "sleep_hours_last_night": {
+                "value": null,
+                "unit": "hours",
+                "timestamp": null,
+                "mission_day": null,
+                "measurement_context": null,
+                "source_type": null,
+                "source_id": null,
+                "record_id": null
+              },
+              "mood_score": {
+                "value": null,
+                "unit": "score",
+                "timestamp": null,
+                "mission_day": null,
+                "measurement_context": null,
+                "source_type": null,
+                "source_id": null,
+                "record_id": null
+              }
+            },
             "baselines": {
               "heart_rate_bpm": {
                 "status": "insufficient_data",
@@ -973,6 +1330,80 @@
               {
                 "field": "body.mood_score",
                 "message": "Must be an integer from 1 to 5."
+              }
+            ]
+          },
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": null
+          }
+        }
+      }
+    },
+    {
+      "name": "null_only_vital_reading",
+      "invalid_input": true,
+      "request": {
+        "method": "POST",
+        "path": "/api/astronauts/AST-001/readings",
+        "body": {
+          "timestamp": "2026-11-01T12:00:00Z",
+          "mission_day": 1,
+          "heart_rate_bpm": null,
+          "spo2_percent": null,
+          "respiratory_rate_bpm": null,
+          "measurement_context": "rest",
+          "source_type": "synthetic",
+          "source_id": "SYN-CORE-001"
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "error": {
+            "code": "VALIDATION_ERROR",
+            "message": "Request validation failed.",
+            "details": [
+              {
+                "field": "body",
+                "message": "Provide at least one vital measurement."
+              }
+            ]
+          },
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": null
+          }
+        }
+      }
+    },
+    {
+      "name": "numeric_string_is_not_a_measurement",
+      "invalid_input": true,
+      "request": {
+        "method": "POST",
+        "path": "/api/astronauts/AST-001/readings",
+        "body": {
+          "timestamp": "2026-11-01T12:00:00Z",
+          "mission_day": 1,
+          "heart_rate_bpm": "72",
+          "spo2_percent": 98,
+          "respiratory_rate_bpm": 16,
+          "measurement_context": "rest",
+          "source_type": "synthetic",
+          "source_id": "SYN-CORE-001"
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "error": {
+            "code": "VALIDATION_ERROR",
+            "message": "Request validation failed.",
+            "details": [
+              {
+                "field": "body.heart_rate_bpm",
+                "message": "Enter a JSON number, not text."
               }
             ]
           },
