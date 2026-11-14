@@ -1,14 +1,14 @@
 # AstroHealth API and Data Contract
 
 Version: **0.1.0**  
-Status: **Contract prepared; product decisions recorded; pull request peer review pending.**  
+Status: **Accepted as the MVP v0.1.0 contract by the user in the working session.**  
 Tracking issue: [CORE-01 / #1](https://github.com/Almejandro04/TorresTech-AstroHealth/issues/1)
 
 This specification defines the MVP interface between the React frontend, FastAPI backend, and data preparation work. It specifies behavior; it does not implement the application. Changes to field names, units, enum values, or response shapes require updates to this document and its fixtures in the same pull request before dependent work merges.
 
 ## 1. Decisions and implementation conventions
 
-| Decision | Proposed v0.1.0 behavior | Reason / review owner |
+| Decision | v0.1.0 behavior | Reason / implementation owner |
 | --- | --- | --- |
 | Mission profiles | Fictional astronauts; demonstration endpoints accept synthetic observations only | All three: avoid presenting terrestrial subjects as astronauts |
 | Mission day | Day 1 is `mission_start_date`, using UTC calendar dates | Jorge + Jhonatan: identical labels on cards, charts, and imports |
@@ -25,7 +25,7 @@ This specification defines the MVP interface between the React frontend, FastAPI
 | Replay | Observation-time cutoff `as_of`, also returned in responses | Jhonatan: later observations must not leak into an earlier demo day |
 | Write retries | Exact reading retry returns existing record; conflicting duplicate returns 409; journal is one updatable entry per day | Jhonatan + Ismael |
 
-The six rows marked confirmed record decisions supplied during the working session. Other rows are documented engineering conventions for peer review, not a claim that every line has already been approved. No application implementation, scientific validation, or clinical endorsement is implied. Further product changes are discussed before changing their wire format; ordinary implementation choices follow this contract.
+The six rows marked confirmed record product decisions supplied during the working session. The user subsequently approved adoption of the complete v0.1.0 contract and its integration into main. This records the user's approval, not separate formal reviews by every contributor. No application implementation, scientific validation, or clinical endorsement is implied. Further product changes are discussed before changing their wire format; ordinary implementation choices follow this contract.
 
 ## 2. Conventions and validation
 
@@ -229,14 +229,14 @@ Fixtures are hand-authored interface examples. Alert/baseline values illustrate 
 
 | Audit item | Review owner | Status |
 | --- | --- | --- |
-| Dashboard can map every indicator and timestamp | Jorge | Pending review |
-| Sleep chart has daily history and null handling | Jorge | Pending review |
-| Types, envelopes, endpoints, duplicates, and cutoff can be implemented | Jhonatan | Pending review |
-| Units, mood scale, missing values, source manifest, and import mapping | Ismael | Pending review |
-| Accept proposed choices in section 1; revise conflicting assumptions | Jorge + Jhonatan, with Ismael's input | Pending review |
+| Dashboard can map every indicator and timestamp | Jorge | Specified in the accepted contract; UI verification belongs to #10/#13 |
+| Sleep chart has daily history and null handling | Jorge | Specified in the accepted contract; chart verification belongs to #11/#13 |
+| Types, envelopes, endpoints, duplicates, and cutoff can be implemented | Jhonatan | Specified in the accepted contract; API verification belongs to #8/#18 |
+| Units, mood scale, missing values, source manifest, and import mapping | Ismael | Mapping specified; dataset/evidence validation remains in #4/#5/#20 |
+| Adopt v0.1.0 and discuss subsequent changes before altering the wire format | Project owners | User approved the contract and integration in the working session |
 | Fixture syntax, CSV/JSON parity, day mapping, and response invariants | Preparation validation | See pull request validation record |
 
-CORE-01 remains open until the contract is reviewed, agreed, and merged through its documentation pull request. No application feature is completed by this document alone.
+CORE-01 records adoption of this contract through documentation pull request #23. Subsequent implementation and scientific-validation issues remain separate. No application feature is completed by this document alone.
 
 ## 7. Usability requirements linked to this contract
 
