@@ -1,0 +1,5 @@
+# Development and test dependencies. Install this file; it includes runtime.
+-r requirements.txt
+pytest==9.2.0
+# HTTP client used by fastapi.testclient (Starlette deprecates plain httpx there).
+httpx2==2.16.0
