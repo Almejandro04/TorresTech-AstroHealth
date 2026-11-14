@@ -1,6 +1,6 @@
 # AstroHealth frontend
 
-React + TypeScript application shell for [FRONTEND-01 / #2](https://github.com/Almejandro04/TorresTech-AstroHealth/issues/2). The interface is English, with a light workspace, dark-blue navigation, and teal accents selected during the working session.
+React + TypeScript application shell for [FRONTEND-01 / #2](https://github.com/Almejandro04/TorresTech-AstroHealth/issues/2). The interface is English. The user rejected the initial visual proposal and requested a complete NASA-inspired redesign with independent functional colors. The existing presentation is not the approved visual direction; see [the active redesign brief](../docs/design/redesign_brief.md).
 
 ## What this initial setup includes
 
