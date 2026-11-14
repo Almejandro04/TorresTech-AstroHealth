@@ -1,0 +1,987 @@
+{
+  "schema_version": "0.1.0",
+  "note": "Synthetic, independent interface examples. Every case starts from the seed state; writes do not mutate subsequent cases. Analysis-disabled cases represent an earlier implementation stage. Reference values/rules are fixtures, not clinically validated algorithms.",
+  "cases": [
+    {
+      "name": "health",
+      "invalid_input": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/health"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": {
+            "status": "ok",
+            "service": "astrohealth-api"
+          },
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": null
+          }
+        }
+      }
+    },
+    {
+      "name": "fictional_profiles",
+      "invalid_input": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/astronauts"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": [
+            {
+              "astronaut_id": "AST-001",
+              "name": "Demo Astronaut 1",
+              "is_fictional": true,
+              "mission_start_date": "2026-11-01",
+              "planned_duration_days": 30
+            },
+            {
+              "astronaut_id": "AST-002",
+              "name": "Demo Astronaut 2",
+              "is_fictional": true,
+              "mission_start_date": "2026-11-01",
+              "planned_duration_days": 30
+            }
+          ],
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": null,
+            "total": 2,
+            "limit": 100,
+            "offset": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "readings_history_with_null_metric",
+      "invalid_input": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/astronauts/AST-001/readings",
+        "query": {
+          "from_day": 6,
+          "to_day": 7,
+          "as_of": "2026-11-07T23:59:59Z",
+          "limit": 2,
+          "offset": 0
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": [
+            {
+              "reading_id": "READING-0006",
+              "astronaut_id": "AST-001",
+              "timestamp": "2026-11-06T12:00:00Z",
+              "mission_day": 6,
+              "heart_rate_bpm": 78,
+              "spo2_percent": 97,
+              "respiratory_rate_bpm": 16,
+              "measurement_context": "rest",
+              "source_type": "synthetic",
+              "source_id": "SYN-CORE-001"
+            },
+            {
+              "reading_id": "READING-0007",
+              "astronaut_id": "AST-001",
+              "timestamp": "2026-11-07T12:00:00Z",
+              "mission_day": 7,
+              "heart_rate_bpm": 84,
+              "spo2_percent": 97,
+              "respiratory_rate_bpm": null,
+              "measurement_context": "rest",
+              "source_type": "synthetic",
+              "source_id": "SYN-CORE-001"
+            }
+          ],
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": "2026-11-07T23:59:59Z",
+            "total": 2,
+            "limit": 2,
+            "offset": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "reading_created",
+      "invalid_input": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/astronauts/AST-001/readings",
+        "body": {
+          "timestamp": "2026-11-08T12:00:00Z",
+          "mission_day": 8,
+          "heart_rate_bpm": 85,
+          "spo2_percent": 97,
+          "respiratory_rate_bpm": 17,
+          "measurement_context": "rest",
+          "source_type": "synthetic",
+          "source_id": "SYN-CORE-001"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "data": {
+            "reading_id": "READING-0008",
+            "astronaut_id": "AST-001",
+            "timestamp": "2026-11-08T12:00:00Z",
+            "mission_day": 8,
+            "heart_rate_bpm": 85,
+            "spo2_percent": 97,
+            "respiratory_rate_bpm": 17,
+            "measurement_context": "rest",
+            "source_type": "synthetic",
+            "source_id": "SYN-CORE-001"
+          },
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": "2026-11-08T12:00:00Z"
+          }
+        }
+      }
+    },
+    {
+      "name": "exact_reading_retry",
+      "invalid_input": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/astronauts/AST-001/readings",
+        "body": {
+          "timestamp": "2026-11-01T12:00:00Z",
+          "mission_day": 1,
+          "heart_rate_bpm": 72,
+          "spo2_percent": 98,
+          "respiratory_rate_bpm": 16,
+          "measurement_context": "rest",
+          "source_type": "synthetic",
+          "source_id": "SYN-CORE-001"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": {
+            "reading_id": "READING-0001",
+            "astronaut_id": "AST-001",
+            "timestamp": "2026-11-01T12:00:00Z",
+            "mission_day": 1,
+            "heart_rate_bpm": 72,
+            "spo2_percent": 98,
+            "respiratory_rate_bpm": 16,
+            "measurement_context": "rest",
+            "source_type": "synthetic",
+            "source_id": "SYN-CORE-001"
+          },
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": "2026-11-07T12:00:00Z"
+          }
+        }
+      }
+    },
+    {
+      "name": "conflicting_reading",
+      "invalid_input": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/astronauts/AST-001/readings",
+        "body": {
+          "timestamp": "2026-11-01T12:00:00Z",
+          "mission_day": 1,
+          "heart_rate_bpm": 73,
+          "spo2_percent": 98,
+          "respiratory_rate_bpm": 16,
+          "measurement_context": "rest",
+          "source_type": "synthetic",
+          "source_id": "SYN-CORE-001"
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "error": {
+            "code": "READING_CONFLICT",
+            "message": "A different observation already exists for this reading key.",
+            "details": []
+          },
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": null
+          }
+        }
+      }
+    },
+    {
+      "name": "journal_history_for_sleep_chart",
+      "invalid_input": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/astronauts/AST-001/journal",
+        "query": {
+          "from_day": 6,
+          "to_day": 7,
+          "as_of": "2026-11-07T23:59:59Z",
+          "limit": 2,
+          "offset": 0
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": [
+            {
+              "journal_id": "JOURNAL-0006",
+              "astronaut_id": "AST-001",
+              "timestamp": "2026-11-06T08:00:00Z",
+              "mission_day": 6,
+              "sleep_hours_last_night": 6.5,
+              "mood_score": 3,
+              "notes": null,
+              "source_type": "synthetic",
+              "source_id": "SYN-CORE-001"
+            },
+            {
+              "journal_id": "JOURNAL-0007",
+              "astronaut_id": "AST-001",
+              "timestamp": "2026-11-07T08:00:00Z",
+              "mission_day": 7,
+              "sleep_hours_last_night": 5.5,
+              "mood_score": 2,
+              "notes": null,
+              "source_type": "synthetic",
+              "source_id": "SYN-CORE-001"
+            }
+          ],
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": "2026-11-07T23:59:59Z",
+            "total": 2,
+            "limit": 2,
+            "offset": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "journal_created",
+      "invalid_input": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/astronauts/AST-001/journal",
+        "body": {
+          "timestamp": "2026-11-08T08:00:00Z",
+          "mission_day": 8,
+          "sleep_hours_last_night": 6.0,
+          "mood_score": 3,
+          "notes": null,
+          "source_type": "synthetic",
+          "source_id": "SYN-CORE-001"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "data": {
+            "journal_id": "JOURNAL-0008",
+            "astronaut_id": "AST-001",
+            "timestamp": "2026-11-08T08:00:00Z",
+            "mission_day": 8,
+            "sleep_hours_last_night": 6.0,
+            "mood_score": 3,
+            "notes": null,
+            "source_type": "synthetic",
+            "source_id": "SYN-CORE-001"
+          },
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": "2026-11-08T08:00:00Z"
+          }
+        }
+      }
+    },
+    {
+      "name": "journal_day_updated_same_id",
+      "invalid_input": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/astronauts/AST-001/journal",
+        "body": {
+          "timestamp": "2026-11-07T08:00:00Z",
+          "mission_day": 7,
+          "sleep_hours_last_night": 6.0,
+          "mood_score": 3,
+          "notes": null,
+          "source_type": "synthetic",
+          "source_id": "SYN-CORE-001"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": {
+            "journal_id": "JOURNAL-0007",
+            "astronaut_id": "AST-001",
+            "timestamp": "2026-11-07T08:00:00Z",
+            "mission_day": 7,
+            "sleep_hours_last_night": 6.0,
+            "mood_score": 3,
+            "notes": null,
+            "source_type": "synthetic",
+            "source_id": "SYN-CORE-001"
+          },
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": "2026-11-07T12:00:00Z"
+          }
+        }
+      }
+    },
+    {
+      "name": "summary_normal_reference_fixture",
+      "invalid_input": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/astronauts/AST-001/summary",
+        "query": {
+          "as_of": "2026-11-05T23:59:59Z"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": {
+            "astronaut": {
+              "astronaut_id": "AST-001",
+              "name": "Demo Astronaut 1",
+              "is_fictional": true,
+              "mission_start_date": "2026-11-01",
+              "planned_duration_days": 30
+            },
+            "mission_day": 5,
+            "latest_reading": {
+              "reading_id": "READING-0005",
+              "astronaut_id": "AST-001",
+              "timestamp": "2026-11-05T12:00:00Z",
+              "mission_day": 5,
+              "heart_rate_bpm": 72,
+              "spo2_percent": 98,
+              "respiratory_rate_bpm": 16,
+              "measurement_context": "rest",
+              "source_type": "synthetic",
+              "source_id": "SYN-CORE-001"
+            },
+            "latest_journal": {
+              "journal_id": "JOURNAL-0005",
+              "astronaut_id": "AST-001",
+              "timestamp": "2026-11-05T08:00:00Z",
+              "mission_day": 5,
+              "sleep_hours_last_night": 7.5,
+              "mood_score": 4,
+              "notes": null,
+              "source_type": "synthetic",
+              "source_id": "SYN-CORE-001"
+            },
+            "baselines": {
+              "heart_rate_bpm": {
+                "status": "available",
+                "value": 72,
+                "sample_count": 5,
+                "reference_start": "2026-11-01T00:00:00Z",
+                "reference_end": "2026-11-05T23:59:59Z",
+                "measurement_context": "rest",
+                "method": "fixture_reference_mean"
+              },
+              "spo2_percent": {
+                "status": "available",
+                "value": 98,
+                "sample_count": 5,
+                "reference_start": "2026-11-01T00:00:00Z",
+                "reference_end": "2026-11-05T23:59:59Z",
+                "measurement_context": "rest",
+                "method": "fixture_reference_mean"
+              },
+              "respiratory_rate_bpm": {
+                "status": "available",
+                "value": 16,
+                "sample_count": 5,
+                "reference_start": "2026-11-01T00:00:00Z",
+                "reference_end": "2026-11-05T23:59:59Z",
+                "measurement_context": "rest",
+                "method": "fixture_reference_mean"
+              },
+              "sleep_hours_last_night": {
+                "status": "available",
+                "value": 7.5,
+                "sample_count": 5,
+                "reference_start": "2026-11-01T00:00:00Z",
+                "reference_end": "2026-11-05T23:59:59Z",
+                "measurement_context": null,
+                "method": "fixture_reference_mean"
+              }
+            },
+            "alert_summary": {
+              "evaluation_status": "available",
+              "active_count": 0,
+              "highest_severity": null,
+              "recent": []
+            }
+          },
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": "2026-11-05T23:59:59Z"
+          }
+        }
+      }
+    },
+    {
+      "name": "summary_introduced_change_and_missing_metric",
+      "invalid_input": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/astronauts/AST-001/summary",
+        "query": {
+          "as_of": "2026-11-07T23:59:59Z"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": {
+            "astronaut": {
+              "astronaut_id": "AST-001",
+              "name": "Demo Astronaut 1",
+              "is_fictional": true,
+              "mission_start_date": "2026-11-01",
+              "planned_duration_days": 30
+            },
+            "mission_day": 7,
+            "latest_reading": {
+              "reading_id": "READING-0007",
+              "astronaut_id": "AST-001",
+              "timestamp": "2026-11-07T12:00:00Z",
+              "mission_day": 7,
+              "heart_rate_bpm": 84,
+              "spo2_percent": 97,
+              "respiratory_rate_bpm": null,
+              "measurement_context": "rest",
+              "source_type": "synthetic",
+              "source_id": "SYN-CORE-001"
+            },
+            "latest_journal": {
+              "journal_id": "JOURNAL-0007",
+              "astronaut_id": "AST-001",
+              "timestamp": "2026-11-07T08:00:00Z",
+              "mission_day": 7,
+              "sleep_hours_last_night": 5.5,
+              "mood_score": 2,
+              "notes": null,
+              "source_type": "synthetic",
+              "source_id": "SYN-CORE-001"
+            },
+            "baselines": {
+              "heart_rate_bpm": {
+                "status": "available",
+                "value": 72,
+                "sample_count": 5,
+                "reference_start": "2026-11-01T00:00:00Z",
+                "reference_end": "2026-11-05T23:59:59Z",
+                "measurement_context": "rest",
+                "method": "fixture_reference_mean"
+              },
+              "spo2_percent": {
+                "status": "available",
+                "value": 98,
+                "sample_count": 5,
+                "reference_start": "2026-11-01T00:00:00Z",
+                "reference_end": "2026-11-05T23:59:59Z",
+                "measurement_context": "rest",
+                "method": "fixture_reference_mean"
+              },
+              "respiratory_rate_bpm": {
+                "status": "available",
+                "value": 16,
+                "sample_count": 5,
+                "reference_start": "2026-11-01T00:00:00Z",
+                "reference_end": "2026-11-05T23:59:59Z",
+                "measurement_context": "rest",
+                "method": "fixture_reference_mean"
+              },
+              "sleep_hours_last_night": {
+                "status": "available",
+                "value": 7.5,
+                "sample_count": 5,
+                "reference_start": "2026-11-01T00:00:00Z",
+                "reference_end": "2026-11-05T23:59:59Z",
+                "measurement_context": null,
+                "method": "fixture_reference_mean"
+              }
+            },
+            "alert_summary": {
+              "evaluation_status": "available",
+              "active_count": 1,
+              "highest_severity": "warning",
+              "recent": [
+                {
+                  "alert_id": "ALERT-0001",
+                  "astronaut_id": "AST-001",
+                  "timestamp": "2026-11-07T12:00:00Z",
+                  "mission_day": 7,
+                  "indicator": "heart_rate_bpm",
+                  "severity": "warning",
+                  "status": "active",
+                  "description": "Introduced synthetic resting heart-rate change.",
+                  "explanation": "Fixture days 6-7 have a resting mean of 81 beats/min; the synthetic days 1-5 reference mean is 72. This controlled example illustrates explanation fields, not a validated medical threshold.",
+                  "rule_id": "DEMO-HR-CHANGE",
+                  "rule_version": "fixture-1",
+                  "observed_value": 81,
+                  "baseline_value": 72,
+                  "unit": "beats/min",
+                  "window_start": "2026-11-06T12:00:00Z",
+                  "window_end": "2026-11-07T12:00:00Z",
+                  "resolved_at": null,
+                  "source_type": "synthetic",
+                  "source_id": "SYN-CORE-001"
+                }
+              ]
+            }
+          },
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": "2026-11-07T23:59:59Z"
+          }
+        }
+      }
+    },
+    {
+      "name": "summary_before_analysis_is_implemented",
+      "invalid_input": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/astronauts/AST-001/summary",
+        "query": {
+          "as_of": "2026-11-07T23:59:59Z"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": {
+            "astronaut": {
+              "astronaut_id": "AST-001",
+              "name": "Demo Astronaut 1",
+              "is_fictional": true,
+              "mission_start_date": "2026-11-01",
+              "planned_duration_days": 30
+            },
+            "mission_day": 7,
+            "latest_reading": {
+              "reading_id": "READING-0007",
+              "astronaut_id": "AST-001",
+              "timestamp": "2026-11-07T12:00:00Z",
+              "mission_day": 7,
+              "heart_rate_bpm": 84,
+              "spo2_percent": 97,
+              "respiratory_rate_bpm": null,
+              "measurement_context": "rest",
+              "source_type": "synthetic",
+              "source_id": "SYN-CORE-001"
+            },
+            "latest_journal": {
+              "journal_id": "JOURNAL-0007",
+              "astronaut_id": "AST-001",
+              "timestamp": "2026-11-07T08:00:00Z",
+              "mission_day": 7,
+              "sleep_hours_last_night": 5.5,
+              "mood_score": 2,
+              "notes": null,
+              "source_type": "synthetic",
+              "source_id": "SYN-CORE-001"
+            },
+            "baselines": {
+              "heart_rate_bpm": {
+                "status": "not_implemented",
+                "value": null,
+                "sample_count": 0,
+                "reference_start": null,
+                "reference_end": null,
+                "measurement_context": "rest",
+                "method": null
+              },
+              "spo2_percent": {
+                "status": "not_implemented",
+                "value": null,
+                "sample_count": 0,
+                "reference_start": null,
+                "reference_end": null,
+                "measurement_context": "rest",
+                "method": null
+              },
+              "respiratory_rate_bpm": {
+                "status": "not_implemented",
+                "value": null,
+                "sample_count": 0,
+                "reference_start": null,
+                "reference_end": null,
+                "measurement_context": "rest",
+                "method": null
+              },
+              "sleep_hours_last_night": {
+                "status": "not_implemented",
+                "value": null,
+                "sample_count": 0,
+                "reference_start": null,
+                "reference_end": null,
+                "measurement_context": null,
+                "method": null
+              }
+            },
+            "alert_summary": {
+              "evaluation_status": "not_implemented",
+              "active_count": null,
+              "highest_severity": null,
+              "recent": []
+            }
+          },
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": "2026-11-07T23:59:59Z"
+          }
+        }
+      }
+    },
+    {
+      "name": "summary_profile_without_observations",
+      "invalid_input": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/astronauts/AST-002/summary"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": {
+            "astronaut": {
+              "astronaut_id": "AST-002",
+              "name": "Demo Astronaut 2",
+              "is_fictional": true,
+              "mission_start_date": "2026-11-01",
+              "planned_duration_days": 30
+            },
+            "mission_day": null,
+            "latest_reading": null,
+            "latest_journal": null,
+            "baselines": {
+              "heart_rate_bpm": {
+                "status": "insufficient_data",
+                "value": null,
+                "sample_count": 0,
+                "reference_start": null,
+                "reference_end": null,
+                "measurement_context": "rest",
+                "method": null
+              },
+              "spo2_percent": {
+                "status": "insufficient_data",
+                "value": null,
+                "sample_count": 0,
+                "reference_start": null,
+                "reference_end": null,
+                "measurement_context": "rest",
+                "method": null
+              },
+              "respiratory_rate_bpm": {
+                "status": "insufficient_data",
+                "value": null,
+                "sample_count": 0,
+                "reference_start": null,
+                "reference_end": null,
+                "measurement_context": "rest",
+                "method": null
+              },
+              "sleep_hours_last_night": {
+                "status": "insufficient_data",
+                "value": null,
+                "sample_count": 0,
+                "reference_start": null,
+                "reference_end": null,
+                "measurement_context": null,
+                "method": null
+              }
+            },
+            "alert_summary": {
+              "evaluation_status": "insufficient_data",
+              "active_count": null,
+              "highest_severity": null,
+              "recent": []
+            }
+          },
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": null
+          }
+        }
+      }
+    },
+    {
+      "name": "evaluated_no_active_alerts",
+      "invalid_input": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/astronauts/AST-001/alerts",
+        "query": {
+          "as_of": "2026-11-05T23:59:59Z"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": [],
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": "2026-11-05T23:59:59Z",
+            "total": 0,
+            "limit": 100,
+            "offset": 0,
+            "evaluation_status": "available"
+          }
+        }
+      }
+    },
+    {
+      "name": "explainable_synthetic_alert",
+      "invalid_input": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/astronauts/AST-001/alerts",
+        "query": {
+          "as_of": "2026-11-07T23:59:59Z"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": [
+            {
+              "alert_id": "ALERT-0001",
+              "astronaut_id": "AST-001",
+              "timestamp": "2026-11-07T12:00:00Z",
+              "mission_day": 7,
+              "indicator": "heart_rate_bpm",
+              "severity": "warning",
+              "status": "active",
+              "description": "Introduced synthetic resting heart-rate change.",
+              "explanation": "Fixture days 6-7 have a resting mean of 81 beats/min; the synthetic days 1-5 reference mean is 72. This controlled example illustrates explanation fields, not a validated medical threshold.",
+              "rule_id": "DEMO-HR-CHANGE",
+              "rule_version": "fixture-1",
+              "observed_value": 81,
+              "baseline_value": 72,
+              "unit": "beats/min",
+              "window_start": "2026-11-06T12:00:00Z",
+              "window_end": "2026-11-07T12:00:00Z",
+              "resolved_at": null,
+              "source_type": "synthetic",
+              "source_id": "SYN-CORE-001"
+            }
+          ],
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": "2026-11-07T23:59:59Z",
+            "total": 1,
+            "limit": 100,
+            "offset": 0,
+            "evaluation_status": "available"
+          }
+        }
+      }
+    },
+    {
+      "name": "alerts_not_implemented_is_not_an_all_clear",
+      "invalid_input": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/astronauts/AST-001/alerts",
+        "query": {
+          "as_of": "2026-11-07T23:59:59Z"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": [],
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": "2026-11-07T23:59:59Z",
+            "total": 0,
+            "limit": 100,
+            "offset": 0,
+            "evaluation_status": "not_implemented"
+          }
+        }
+      }
+    },
+    {
+      "name": "known_profile_empty_readings",
+      "invalid_input": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/astronauts/AST-002/readings"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": [],
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": null,
+            "total": 0,
+            "limit": 100,
+            "offset": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "unknown_profile",
+      "invalid_input": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/astronauts/AST-999/summary"
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "error": {
+            "code": "ASTRONAUT_NOT_FOUND",
+            "message": "Astronaut AST-999 was not found.",
+            "details": []
+          },
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": null
+          }
+        }
+      }
+    },
+    {
+      "name": "invalid_spo2_shape_constraint",
+      "invalid_input": true,
+      "request": {
+        "method": "POST",
+        "path": "/api/astronauts/AST-001/readings",
+        "body": {
+          "timestamp": "2026-11-01T12:00:00Z",
+          "mission_day": 1,
+          "heart_rate_bpm": 72,
+          "spo2_percent": 101,
+          "respiratory_rate_bpm": 16,
+          "measurement_context": "rest",
+          "source_type": "synthetic",
+          "source_id": "SYN-CORE-001"
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "error": {
+            "code": "VALIDATION_ERROR",
+            "message": "Request validation failed.",
+            "details": [
+              {
+                "field": "body.spo2_percent",
+                "message": "Must be between 0 and 100."
+              }
+            ]
+          },
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": null
+          }
+        }
+      }
+    },
+    {
+      "name": "inconsistent_mission_day",
+      "invalid_input": true,
+      "request": {
+        "method": "POST",
+        "path": "/api/astronauts/AST-001/readings",
+        "body": {
+          "timestamp": "2026-11-01T12:00:00Z",
+          "mission_day": 2,
+          "heart_rate_bpm": 72,
+          "spo2_percent": 98,
+          "respiratory_rate_bpm": 16,
+          "measurement_context": "rest",
+          "source_type": "synthetic",
+          "source_id": "SYN-CORE-001"
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "error": {
+            "code": "VALIDATION_ERROR",
+            "message": "Request validation failed.",
+            "details": [
+              {
+                "field": "body.mission_day",
+                "message": "Does not match the observation UTC date."
+              }
+            ]
+          },
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": null
+          }
+        }
+      }
+    },
+    {
+      "name": "invalid_mood_score",
+      "invalid_input": true,
+      "request": {
+        "method": "POST",
+        "path": "/api/astronauts/AST-001/journal",
+        "body": {
+          "timestamp": "2026-11-01T08:00:00Z",
+          "mission_day": 1,
+          "sleep_hours_last_night": 7.5,
+          "mood_score": 6,
+          "notes": null,
+          "source_type": "synthetic",
+          "source_id": "SYN-CORE-001"
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "error": {
+            "code": "VALIDATION_ERROR",
+            "message": "Request validation failed.",
+            "details": [
+              {
+                "field": "body.mood_score",
+                "message": "Must be an integer from 1 to 5."
+              }
+            ]
+          },
+          "meta": {
+            "schema_version": "0.1.0",
+            "as_of": null
+          }
+        }
+      }
+    }
+  ]
+}
