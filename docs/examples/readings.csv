@@ -1,0 +1,8 @@
+astronaut_id,timestamp,mission_day,heart_rate_bpm,spo2_percent,respiratory_rate_bpm,measurement_context,source_type,source_id
+AST-001,2026-11-01T12:00:00Z,1,72,98,16,rest,synthetic,SYN-CORE-001
+AST-001,2026-11-02T12:00:00Z,2,72,98,16,rest,synthetic,SYN-CORE-001
+AST-001,2026-11-03T12:00:00Z,3,72,98,16,rest,synthetic,SYN-CORE-001
+AST-001,2026-11-04T12:00:00Z,4,72,98,16,rest,synthetic,SYN-CORE-001
+AST-001,2026-11-05T12:00:00Z,5,72,98,16,rest,synthetic,SYN-CORE-001
+AST-001,2026-11-06T12:00:00Z,6,78,97,16,rest,synthetic,SYN-CORE-001
+AST-001,2026-11-07T12:00:00Z,7,84,97,,rest,synthetic,SYN-CORE-001

@@ -1,0 +1,8 @@
+astronaut_id,timestamp,mission_day,sleep_hours_last_night,mood_score,notes,source_type,source_id
+AST-001,2026-11-01T08:00:00Z,1,7.5,4,,synthetic,SYN-CORE-001
+AST-001,2026-11-02T08:00:00Z,2,7.5,4,,synthetic,SYN-CORE-001
+AST-001,2026-11-03T08:00:00Z,3,7.5,4,,synthetic,SYN-CORE-001
+AST-001,2026-11-04T08:00:00Z,4,7.5,4,,synthetic,SYN-CORE-001
+AST-001,2026-11-05T08:00:00Z,5,7.5,4,,synthetic,SYN-CORE-001
+AST-001,2026-11-06T08:00:00Z,6,6.5,3,,synthetic,SYN-CORE-001
+AST-001,2026-11-07T08:00:00Z,7,5.5,2,,synthetic,SYN-CORE-001
