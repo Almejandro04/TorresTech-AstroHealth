@@ -1,7 +1,8 @@
 """Run an isolated real-HTTP/SQLite integration smoke from the repository root.
 
-Uses only a temporary database and owned subprocesses. Does not exercise a browser,
-claim DATA-04 delivery, or substitute for the pending analysis/alert engines.
+Uses only temporary databases and owned subprocesses. Stages: the CORE-01 seed
+(replay, CORS, frontend client, restart) and the DATA-04 30-day mission (baseline,
+generated alert, resolution, nulls, frontend guards). Does not exercise a browser.
 """
 from __future__ import annotations
 
@@ -22,6 +23,7 @@ from urllib.request import Request, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 BACKEND = ROOT / "backend"
 SEED = ROOT / "docs" / "examples" / "mission_seed.json"
+MISSION = ROOT / "data" / "synthetic" / "mission_ast101_ast102.json"
 ORIGIN = "http://127.0.0.1:5175"
 SERVER = """
 import json, socket, uvicorn
@@ -189,9 +191,141 @@ def main(argv=None):
             checks.append("service stop/restart with persistent journal correction, stable identity and reading retry")
         finally:
             server.stop()
-    print(json.dumps({"passed": True, "checks": checks, "source": "CORE-01 seven-day seed; disposable database",
-                      "limitations": ["No browser/UI review", "DATA-04 pending", "Analysis and alert engines pending #14/#15"]}, indent=2))
+    mission = mission_stage(node, checks)
+    print(json.dumps({"passed": True, "checks": checks,
+                      "source": "CORE-01 seven-day seed and DATA-04 30-day synthetic mission; disposable databases",
+                      "mission_stage": mission,
+                      "limitations": ["No automated browser/UI review",
+                                      "Baseline and alert rules are experimental and not clinically validated"]},
+                     indent=2))
     return 0
+
+
+def end_of_day(day):
+    return f"2026-11-{day:02d}T23:59:59Z"
+
+
+def mission_stage(node, checks):
+    """DATA-04 mission -> experimental baseline -> generated alert, over real HTTP."""
+    results = {}
+    with tempfile.TemporaryDirectory(prefix="astrohealth-mission-") as temporary:
+        directory = Path(temporary).resolve()
+        database = directory / "mission30.db"
+        require(database.parent == directory, "Database escaped the temporary workspace")
+        env = {**os.environ, "ASTROHEALTH_DB_PATH": str(database),
+               "ASTROHEALTH_CORS_ORIGINS": ORIGIN, "PYTHONIOENCODING": "utf-8"}
+        server = Backend(env)
+
+        def import_mission():
+            return json.loads(command([sys.executable, "-m", "app.database", "import-json",
+                                       str(MISSION), "--until-day", "30"], env))
+
+        try:
+            first = import_mission()
+            require(first["committed"] and first["records"]["readings"]["created"] == 63
+                    and first["records"]["journal"]["created"] == 32, "Mission import counts differ")
+            repeat = import_mission()
+            require(all(counts["created"] == 0 and counts["updated"] == 0
+                        for counts in repeat["records"].values()), "Repeated mission import changed rows")
+            results["import"] = {"created": {k: v["created"] for k, v in first["records"].items()},
+                                 "repeat": {k: v["repeated"] for k, v in repeat["records"].items()}}
+            checks.append("DATA-04 30-day mission import and idempotent re-import (all repeated)")
+
+            url = server.start()
+            base = url + "/api/astronauts/AST-101"
+
+            def summary(day):
+                return request(f"{base}/summary?as_of={end_of_day(day)}")[0]["data"]
+
+            def alerts(day):
+                return request(f"{base}/alerts?as_of={end_of_day(day)}&limit=1000")[0]
+
+            day5 = summary(5)
+            require(day5["baselines"]["heart_rate_bpm"]["status"] == "insufficient_data"
+                    and day5["alert_summary"]["evaluation_status"] == "insufficient_data"
+                    and alerts(5)["meta"]["evaluation_status"] == "insufficient_data",
+                    "Day 5 must have no reference and no evaluation")
+            results["day_5"] = {"baseline": "insufficient_data", "evaluation_status": "insufficient_data"}
+
+            baseline = summary(9)["baselines"]["heart_rate_bpm"]
+            day9 = alerts(9)
+            require(baseline["status"] == "available" and abs(baseline["value"] - 72.2) < 1e-9,
+                    "Day 9 baseline must be available at 72.2")
+            require(day9["meta"]["evaluation_status"] == "available"
+                    and not [a for a in day9["data"] if a["status"] == "active"],
+                    "Isolated day-9 spike must not alert")
+            results["day_9"] = {"baseline": baseline["value"], "evaluation_status": "available", "active_alerts": 0}
+
+            day19 = [a for a in alerts(19)["data"] if a["status"] == "active"]
+            require(len(day19) == 1, f"Day 19 must have exactly one active alert, got {len(day19)}")
+            alert = day19[0]
+            require(alert["rule_id"] == "DEMO-HR-CHANGE" and alert["severity"] == "warning"
+                    and alert["window_start"] == "2026-11-18T12:00:00Z"
+                    and alert["window_end"] == "2026-11-19T12:00:00Z"
+                    and alert["observed_value"] == 80 and alert["explanation"].strip(),
+                    f"Day 19 alert differs: {alert}")
+            results["day_19"] = {key: alert[key] for key in ("alert_id", "rule_id", "severity", "window_start",
+                                                             "window_end", "observed_value", "baseline_value")}
+
+            day22 = alerts(22)["data"]
+            require(len(day22) == 1 and day22[0]["alert_id"] == alert["alert_id"]
+                    and day22[0]["status"] == "resolved" and day22[0]["resolved_at"] == "2026-11-22T12:00:00Z",
+                    f"Day 22 must resolve the same alert: {day22}")
+            results["day_22"] = {"alert_id": day22[0]["alert_id"], "status": "resolved",
+                                 "resolved_at": day22[0]["resolved_at"]}
+
+            views30 = [alerts(30) for _ in range(3)]
+            require(all(v["meta"]["total"] == 1 and [a["alert_id"] for a in v["data"]] == [alert["alert_id"]]
+                        for v in views30), "Day 30 must keep one alert without duplicates")
+            results["day_30"] = {"totals": [v["meta"]["total"] for v in views30], "alert_id": alert["alert_id"]}
+            checks.append("real HTTP AST-101 cutoffs: day 5 no reference, day 9 isolated spike, "
+                          "day 19 warning, day 22 resolved, day 30 single alert")
+
+            short_summary = request(url + "/api/astronauts/AST-102/summary")[0]["data"]["alert_summary"]
+            short_alerts = request(url + "/api/astronauts/AST-102/alerts")[0]
+            require(short_summary["evaluation_status"] == "insufficient_data"
+                    and short_alerts["meta"]["evaluation_status"] == "insufficient_data"
+                    and short_alerts["data"] == [], "AST-102 must stay insufficient_data")
+            results["AST-102"] = "insufficient_data"
+            checks.append("AST-102 short history is insufficient_data, never an empty available list")
+
+            readings = request(f"{base}/readings?from_day=11&to_day=13&limit=1000")[0]["data"]
+            rest = {r["mission_day"]: r for r in readings if r["measurement_context"] == "rest"}
+            journal = request(f"{base}/journal?from_day=13&to_day=15")[0]["data"]
+            require(rest[12]["heart_rate_bpm"] is None and rest[12]["spo2_percent"] is not None
+                    and rest[13]["respiratory_rate_bpm"] is None, "Scenario nulls did not reach the API as null")
+            require([j["mission_day"] for j in journal] == [13, 15], "Day-14 journal must be absent")
+            # Contract 3.5: the card shows the latest NON-NULL value at the cutoff in any
+            # context, with that observation's own time and context. Day 12 is an even day,
+            # so its 17:00 exercise reading is later than the null rest reading at 12:00.
+            history = request(f"{base}/readings?as_of={end_of_day(12)}&limit=1000")[0]["data"]
+            expected = max((r for r in history if r["heart_rate_bpm"] is not None),
+                           key=lambda r: (r["timestamp"], r["reading_id"]))
+            heart = summary(12)["latest_metrics"]["heart_rate_bpm"]
+            require(heart["value"] is not None and heart["record_id"] == expected["reading_id"]
+                    and heart["record_id"] != rest[12]["reading_id"]
+                    and heart["timestamp"] == expected["timestamp"]
+                    and heart["measurement_context"] == expected["measurement_context"],
+                    f"Day-12 card must show the latest non-null heart rate with its own time: {heart}")
+            results["nulls"] = {"day_12_rest_heart_rate_bpm": None, "day_13_rest_respiratory_rate_bpm": None,
+                                "day_14_journal": "absent",
+                                "day_12_heart_rate_card": {key: heart[key] for key in
+                                                           ("value", "timestamp", "mission_day",
+                                                            "measurement_context", "record_id")}}
+            checks.append("scenario nulls/absence preserved; day-12 heart-rate card shows the latest non-null "
+                          "observation with its own timestamp and context, not the null rest reading")
+
+            if node is None:
+                results["frontend_guards"] = "skipped (Node 22.13+ not available)"
+            else:
+                output = command([node, str(BACKEND / "scripts" / "check_mission_views.mjs"), url, "AST-101",
+                                  end_of_day(19), end_of_day(22)], env)
+                print(output, end="")
+                results["frontend_guards"] = output.strip()
+                checks.append("frontend responses.* and matchesView guards on AST-101 days 19 and 22")
+        finally:
+            server.stop()
+    return results
 
 
 if __name__ == "__main__":
