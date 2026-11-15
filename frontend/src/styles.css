@@ -1,0 +1,26 @@
+@import "tailwindcss";
+@import "./styles/tokens.css";
+@import "./styles/base.css";
+@import "./styles/shell.css";
+@import "./styles/components.css";
+@import "./styles/views.css";
+
+/* Design tokens exposed as Tailwind utilities (bg-page, text-ink, border-rule, font-mono, ...). */
+@theme inline {
+  --font-sans: var(--ah-font-sans);
+  --font-mono: var(--ah-font-mono);
+  --color-page: var(--ah-page);
+  --color-surface-2: var(--ah-surface-2);
+  --color-surface-3: var(--ah-surface-3);
+  --color-ink: var(--ah-ink);
+  --color-ink-2: var(--ah-ink-2);
+  --color-ink-3: var(--ah-ink-3);
+  --color-rule: var(--ah-rule);
+  --color-action: var(--ah-action);
+  --color-action-ink: var(--ah-action-ink);
+  --color-critical: var(--ah-critical);
+  --color-warning: var(--ah-warning);
+  --color-success: var(--ah-success);
+  --color-info: var(--ah-info);
+  --color-neutral: var(--ah-neutral);
+}
