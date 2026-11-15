@@ -135,7 +135,7 @@ export function MissionBar({ onOpenDemo }: { onOpenDemo: () => void }) {
             <span>Synthetic demo</span>
           </button>
         ) : (
-          <p className="tag mission-bar__demo"><FlaskConical size={13} aria-hidden="true" /> Synthetic mission data</p>
+          <p className="tag mission-bar__demo"><FlaskConical size={13} aria-hidden="true" /> API · synthetic mission data</p>
         )}
       </div>
 

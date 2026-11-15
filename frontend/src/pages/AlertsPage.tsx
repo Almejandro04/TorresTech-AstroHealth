@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { ArrowLeft, ArrowRight, FlaskConical, Lock } from 'lucide-react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { MetricChart } from '../components/MetricChart'
-import { AlertStatusBadge, Callout, ErrorState, LoadingBlock, PageHeader, Segmented, SeverityBadge } from '../components/ui'
+import { AlertStatusBadge, Callout, ErrorState, LoadingBlock, PageHeader, RefreshDataButton, Segmented, SeverityBadge } from '../components/ui'
 import { useMission } from '../hooks/MissionContext'
 import { useHistory } from '../hooks/useHistory'
 import { METRICS, describeValue, formatDelta, hasBaseline } from '../lib/metrics'
@@ -121,7 +121,7 @@ export function AlertsPage() {
 
   return (
     <>
-      <PageHeader title="Alerts" lead="Experimental attention levels with their explanation and evidence. Read-only: you consult them, the analysis engine maintains them." />
+      <PageHeader title="Alerts" lead="Experimental attention levels with their explanation and evidence. Read-only: you consult them, the analysis engine maintains them." actions={<RefreshDataButton />} />
 
       {unknownAstronautId && <Callout tone="warning" title="Astronaut profile not found"><p>Choose a profile in the mission bar.</p></Callout>}
       {view.status === 'error' && <ErrorState error={view.error} subject="the mission summary" onRetry={view.retry} />}

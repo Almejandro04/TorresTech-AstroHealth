@@ -8,9 +8,9 @@ import { loadHistory } from '../hooks/useHistory'
 import { useResource } from '../hooks/useResource'
 import { MOOD_LABELS, MOOD_SCORES, describeValue } from '../lib/metrics'
 import { formatUtcDate, formatUtcShortDate, missionDayStartMs } from '../lib/time'
-import { toHealthDataError } from '../services'
-import type { HealthDataError } from '../services'
+import { HealthDataError, toHealthDataError } from '../services'
 import { buildJournalInput } from '../services/journalDefaults'
+import { appConfig } from '../services/config'
 import type { Astronaut, HealthJournal, MoodScore } from '../types/health'
 
 const NOTES_LIMIT = 2000
@@ -99,6 +99,7 @@ function JournalForm({ astronaut, day, entry, isPastDay, viewDay, isHistorical }
   }, [save.status])
 
   const saving = save.status === 'saving'
+  const newEntrySetupPending = source.kind === 'api' && !saved && !appConfig.newJournalDefaults
   const dirty = !sameDraft(draft, draftOf(saved))
   const notesLength = draft.notes.trim().length
   const dateLabel = formatUtcDate(missionDayStartMs(astronaut.mission_start_date, day))
@@ -124,6 +125,7 @@ function JournalForm({ astronaut, day, entry, isPastDay, viewDay, isHistorical }
   const submit = async (event?: FormEvent) => {
     event?.preventDefault()
     if (saving) return
+    if (newEntrySetupPending) return
     const found = validate(draft)
     if (Object.keys(found).length > 0) {
       setErrors(found)
@@ -136,9 +138,12 @@ function JournalForm({ astronaut, day, entry, isPastDay, viewDay, isHistorical }
     setErrors({})
     setSave({ status: 'saving' })
     const notes = draft.notes.trim()
-    const input = buildJournalInput(astronaut, day, saved, { sleep: parseSleep(draft.sleep) ?? null, mood: draft.mood, notes: notes === '' ? null : notes })
+    const input = buildJournalInput(astronaut, day, saved, { sleep: parseSleep(draft.sleep) ?? null, mood: draft.mood, notes: notes === '' ? null : notes }, source.kind === 'api' ? appConfig.newJournalDefaults ?? undefined : undefined)
     try {
       const result = await source.saveJournal(astronaut.astronaut_id, input)
+      if (saved && result.response.data.journal_id !== saved.journal_id) {
+        throw new HealthDataError({ kind: 'timeout', code: 'INVALID_RESPONSE', message: 'The correction did not confirm the original entry identity.' })
+      }
       setSaved(result.response.data)
       setDraft(draftOf(result.response.data))
       setSave({ status: 'saved', outcome: result.outcome, entry: result.response.data })
@@ -174,6 +179,8 @@ function JournalForm({ astronaut, day, entry, isPastDay, viewDay, isHistorical }
             : <><Tag>New entry</Tag> <span>Nothing is recorded for this day yet. No value is assumed.</span></>}
         </p>
       </div>
+
+      {newEntrySetupPending && <Callout tone="info" title="New-entry setup pending"><p>New entries are not enabled for this mission yet. You can still select a recorded day and correct its entry.</p></Callout>}
 
       {isPastDay && (
         <Callout tone="info" title={`You are editing Day ${day}, a past day`} compact>
@@ -284,7 +291,7 @@ function JournalForm({ astronaut, day, entry, isPastDay, viewDay, isHistorical }
       </div>
 
       <div className="journal-form__actions">
-        <button type="submit" className="button button--primary" aria-disabled={saving || !dirty} disabled={saving || !dirty}>
+        <button type="submit" className="button button--primary" aria-disabled={saving || !dirty || newEntrySetupPending} disabled={saving || !dirty || newEntrySetupPending}>
           {saving && <LoaderCircle className="spin" size={16} aria-hidden="true" />}
           {saving ? 'Saving…' : saved ? 'Save changes' : 'Save entry'}
         </button>

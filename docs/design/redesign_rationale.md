@@ -51,7 +51,7 @@ The 94-pair script verifies its enumerated token pairs, not every possible rende
 - Live journal effective timestamp/source selection must be agreed before #13 writes to FastAPI; current 08:00 UTC / SYN-CORE-001 convention is mock-only.
 - Journal storage remains page-session memory; samples are presentation fixtures, not newly validated biomedical rules.
 - The approximately 779 kB JavaScript bundle triggers Vite's 500 kB warning. It builds successfully; route/chart splitting is a possible performance follow-up.
-- Keep PR #24 in draft and #2 open pending final user review. Do not close the later feature/integration issues on the basis of mock presentation.
+- Review disposition: PR #24 was subsequently merged and #2 closed with user authorization. Later functional acceptance and remaining integration work are tracked in docs/testing/frontend_acceptance.md.
 
 ## Manual smoke sequence
 

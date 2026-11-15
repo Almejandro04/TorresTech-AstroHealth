@@ -21,7 +21,7 @@ npm run build
 npm run preview
 ```
 
-`check` runs contrast and mock-contract checks. Build includes TypeScript and produces `dist/`; preview uses port 4173. Hash routes support refresh and browser history without server rewrite rules.
+`check` runs contrast, mock-contract, series/component edge-case and HTTP-client checks. Build includes TypeScript and produces `dist/`; preview uses port 4173. Hash routes support refresh and browser history without server rewrite rules.
 
 ## Implemented experience
 
@@ -36,13 +36,17 @@ npm run preview
 
 ## Data and integration boundary
 
-All reads/writes currently use `mockHealthDataSource` selected explicitly in `src/services/index.ts`. Journal changes last only for the current page session and reset on reload. A mock success never claims server persistence. No live backend integration is delivered here; #13 remains open.
+The default source is mock. Set VITE_DATA_SOURCE=api in .env.local and restart Vite to use createApiHealthDataSource. VITE_API_BASE_URL defaults to http://localhost:8000 and VITE_API_TIMEOUT_MS defaults to 10000. Invalid configuration fails explicitly; the real client never falls back to mock responses. API mode is identified in the mission bar. The backend must allow the exact frontend origin/port through CORS.
 
-`VITE_API_BASE_URL` defaults to http://localhost:8000. Copy `.env.example` to `.env.local` to configure a future API transport; setting it alone does not activate HTTP reads. The backend must allow the actual frontend origin through CORS when live transport is added.
+The Fetch adapter implements profiles, summary, vital/journal histories, alert filters and journal writes. It checks supported v0.1.0 wire shapes, profile identity and observation cutoffs, and normalizes HTTP/network/timeout failures. A lost write response is unconfirmed, never a promise that nothing was sent. Corrections must retain daily identity. Refresh data on Dashboard/Analytics/Alerts reloads resources without changing URL selections.
 
-`src/services/healthDataSource.ts` defines typed reads, filters, cutoff and journal-write behavior. The mock engine derives responses from `docs/examples/mission_seed.json`. `npm run check:mocks` checks the 12 shared response fixtures, journal writes/errors and replay policies. No independent clinical alert engine is introduced.
+Mock journal changes last only for the current page session and reset on reload. New mock entries retain the fixture convention 08:00 UTC / SYN-CORE-001. API creates instead require explicit VITE_JOURNAL_SOURCE_ID and VITE_JOURNAL_TIME_UTC (HH:MM:SS), matching the imported mission and agreed effective observation time; otherwise new creates stay disabled with an explanation. Existing corrections preserve their original source/time.
 
-New journal entries temporarily follow the fixture convention: 08:00 UTC on the selected mission day and source SYN-CORE-001. Corrections keep original timestamp/source. This is a mock integration convention in `journalDefaults.ts`, not a new backend rule; agree effective time/provenance with the backend before live writes.
+The backend in the reviewed main baseline serves only /api/health. Actual mission/SQLite integration is still blocked: #13 and #17 remain open. Run npm run check:health -- http://127.0.0.1:8000 for a read-only real-backend probe. It proves only service health.
+
+The mock engine derives its data from docs/examples/mission_seed.json. npm run check:mocks verifies the shared examples and replay policies. scripts/fixture-api.mjs and serve-fixture-api.mjs are explicitly test-only HTTP shims for checking the transport, not the backend deliverable or a second production API.
+
+See [the root README](../README.md), [demo runbook](../docs/demo_runbook.md) and [integration procedure](../docs/architecture/integration_smoke_test.md) for supported commands, scopes and blockers.
 
 ## Modules
 
@@ -53,13 +57,14 @@ New journal entries temporarily follow the fixture convention: 08:00 UTC on the 
 | src/components/MetricChart.tsx, Sparkline.tsx, ui.tsx | Charts, summaries, accessible dialogs and states |
 | src/pages/ | Dashboard, Analytics, Alerts and Journal |
 | src/hooks/MissionContext.tsx, useResource.ts, useHistory.ts | Shared selection, resource states, stale-result isolation and history |
+| src/services/apiHealthDataSource.ts, responseValidation.ts | Fetch transport, wire guards and error normalization |
 | src/services/mock/ | Seed-derived engine and explicit demo scenarios |
 | src/lib/ | UTC dates, units and display-series helpers |
 | src/styles/ | Brand/semantic tokens, base controls, shell and views |
-| scripts/ | Contrast and mock-contract checks |
+| scripts/ | Contrast, mock/series/HTTP checks, real health probe and test-only HTTP fixture |
 
 ## Review status and remaining work
 
-See the rationale for executed checks and the manual smoke sequence. The production JavaScript bundle is approximately 779 kB / 233 kB gzip; Vite's 500 kB warning is retained. Splitting chart code can be considered later rather than hiding the warning.
+See the rationale for executed checks and the manual smoke sequence. The production JavaScript bundle is approximately 787 kB / 236 kB gzip; Vite's 500 kB warning is retained. Splitting chart code can be considered later rather than hiding the warning.
 
-The redesign advances mock presentation for #10, #11, #12 and #17; those issues are not automatically complete. Live storage/API, generated alerts, end-to-end testing (#21), and final user design acceptance remain separate. This prototype uses fictional synthetic records and experimental explanations, not medically validated diagnoses or NASA endorsement.
+Functional acceptance evidence for #10/#11/#12 is in [frontend_acceptance.md](../docs/testing/frontend_acceptance.md). API-backed Journal, live storage/API, generated alerts and end-to-end testing (#21) remain separate. This prototype uses fictional synthetic records and experimental explanations, not medically validated diagnoses or NASA endorsement.

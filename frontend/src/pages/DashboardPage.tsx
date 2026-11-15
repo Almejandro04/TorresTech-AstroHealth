@@ -1,7 +1,7 @@
 import { ArrowDown, ArrowRight, ArrowUp, CircleDashed, FlaskConical, History, Minus } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Sparkline } from '../components/Sparkline'
-import { AlertStatusBadge, Callout, ErrorState, LoadingBlock, PageHeader, Section, SeverityBadge, Tag } from '../components/ui'
+import { AlertStatusBadge, Callout, ErrorState, LoadingBlock, PageHeader, RefreshDataButton, Section, SeverityBadge, Tag } from '../components/ui'
 import { useMission } from '../hooks/MissionContext'
 import { useHistory } from '../hooks/useHistory'
 import type { MissionHistory } from '../hooks/useHistory'
@@ -209,9 +209,8 @@ export function DashboardPage() {
 
   return (
     <>
-      <PageHeader title="Dashboard" lead="Latest recorded value of each indicator, with the moment it was observed." />
+      <PageHeader title="Dashboard" lead="Latest recorded value of each indicator, with the moment it was observed." actions={<RefreshDataButton />} />
 
-      {profiles.status === 'error' && <ErrorState error={profiles.error} subject="the mission profiles" onRetry={profiles.retry} />}
       {unknownAstronautId && (
         <Callout tone="warning" title="Astronaut profile not found">
           <p>No fictional profile has the ID <span className="mono">{unknownAstronautId}</span>. Choose a profile in the mission bar. This is different from a profile with no observations.</p>

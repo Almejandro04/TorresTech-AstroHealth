@@ -10,6 +10,7 @@ import type { Astronaut, HealthJournal, HealthJournalInput, MoodScore } from '..
  */
 export const NEW_ENTRY_TIME_UTC = '08:00:00'
 export const NEW_ENTRY_SOURCE_ID = 'SYN-CORE-001'
+export interface JournalDefaults { timeUtc: string; sourceId: string }
 
 export interface JournalDraftValues {
   sleep: number | null
@@ -17,14 +18,14 @@ export interface JournalDraftValues {
   notes: string | null
 }
 
-export function buildJournalInput(astronaut: Astronaut, day: number, existing: HealthJournal | null, values: JournalDraftValues): HealthJournalInput {
+export function buildJournalInput(astronaut: Astronaut, day: number, existing: HealthJournal | null, values: JournalDraftValues, defaults: JournalDefaults = { timeUtc: NEW_ENTRY_TIME_UTC, sourceId: NEW_ENTRY_SOURCE_ID }): HealthJournalInput {
   return {
-    timestamp: existing?.timestamp ?? `${missionDayIsoDate(astronaut.mission_start_date, day)}T${NEW_ENTRY_TIME_UTC}Z`,
+    timestamp: existing?.timestamp ?? `${missionDayIsoDate(astronaut.mission_start_date, day)}T${defaults.timeUtc}Z`,
     mission_day: day,
     sleep_hours_last_night: values.sleep,
     mood_score: values.mood,
     notes: values.notes,
     source_type: 'synthetic',
-    source_id: existing?.source_id ?? NEW_ENTRY_SOURCE_ID,
+    source_id: existing?.source_id ?? defaults.sourceId,
   }
 }

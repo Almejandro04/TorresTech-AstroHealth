@@ -21,7 +21,7 @@ const exampleBody = (name) => {
   return found
 }
 
-const server = await createServer({ root, logLevel: 'error', server: { middlewareMode: true, hmr: false }, appType: 'custom' })
+const server = await createServer({ root, logLevel: 'error', server: { middlewareMode: true, hmr: false, ws: false }, appType: 'custom' })
 let failures = 0
 const check = (label, actual, expected) => {
   const pass = isDeepStrictEqual(actual, expected)

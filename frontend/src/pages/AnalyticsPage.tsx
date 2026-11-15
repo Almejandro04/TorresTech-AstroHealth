@@ -1,7 +1,7 @@
 import { useEffect, useId } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { MetricChart, describeBaseline } from '../components/MetricChart'
-import { Callout, ErrorState, LoadingBlock, PageHeader, Section, Segmented } from '../components/ui'
+import { Callout, ErrorState, LoadingBlock, PageHeader, RefreshDataButton, Section, Segmented } from '../components/ui'
 import { useMission } from '../hooks/MissionContext'
 import { useHistory } from '../hooks/useHistory'
 import type { MissionHistory } from '../hooks/useHistory'
@@ -96,7 +96,7 @@ export function AnalyticsPage() {
 
   return (
     <>
-      <PageHeader title="Analytics" lead="Recorded values over time, compared with the individual reference when one exists." />
+      <PageHeader title="Analytics" lead="Recorded values over time, compared with the individual reference when one exists." actions={<RefreshDataButton />} />
 
       {unknownAstronautId && <Callout tone="warning" title="Astronaut profile not found"><p>Choose a profile in the mission bar.</p></Callout>}
       {view.status === 'error' && <ErrorState error={view.error} subject="the mission summary" onRetry={view.retry} />}

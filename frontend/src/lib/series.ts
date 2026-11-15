@@ -78,7 +78,7 @@ export function buildMetricHistory(
   const series = SERIES_ORDER.filter((key) => grouped.has(key)).map((key): MetricSeries => ({
     key,
     label: key === 'journal' ? 'Daily entry' : `${CONTEXT_LABELS[key]} readings`,
-    points: (grouped.get(key) ?? []).sort((a, b) => a.t - b.t),
+    points: (grouped.get(key) ?? []).sort((a, b) => a.t - b.t || a.recordId.localeCompare(b.recordId)),
   }))
 
   const observedDays = new Set(series.flatMap((item) => item.points.map((point) => point.day)))

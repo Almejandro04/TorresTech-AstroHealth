@@ -95,10 +95,10 @@ export function Tag({ children, icon: Icon }: { children: ReactNode; icon?: Luci
 
 /** The route's single h1. It receives focus after navigation so keyboard users land on it. */
 export function PageHeader({ title, lead, actions }: { title: string; lead?: ReactNode; actions?: ReactNode }) {
-  const { astronaut, view, viewDay, isHistorical } = useMission()
+  const { astronaut, profiles, view, viewDay, isHistorical } = useMission()
   const summary = view.status === 'ready' ? view.data.data : null
   return (
-    <header className="page-header">
+    <><header className="page-header">
       <div>
         <h1 id="page-title" tabIndex={-1}>{title}</h1>
         {astronaut && (
@@ -118,7 +118,19 @@ export function PageHeader({ title, lead, actions }: { title: string; lead?: Rea
       </div>
       {actions && <div className="page-header__actions">{actions}</div>}
     </header>
+    {profiles.status === 'error' && <ErrorState error={profiles.error} subject="the mission profiles" onRetry={profiles.retry} />}
+    </>
   )
+}
+
+/** Refresh external readings/replay without changing the selected profile or URL filters. */
+export function RefreshDataButton() {
+  const { refresh, profiles, view } = useMission()
+  const refreshing = profiles.status === 'loading' || view.status === 'loading'
+    || (profiles.status === 'ready' && profiles.refreshing) || (view.status === 'ready' && view.refreshing)
+  return <button type="button" className="button button--secondary" disabled={refreshing} onClick={refresh}>
+    <RotateCcw size={16} aria-hidden="true" />{refreshing ? 'Refreshing…' : 'Refresh data'}
+  </button>
 }
 
 interface SectionProps {
