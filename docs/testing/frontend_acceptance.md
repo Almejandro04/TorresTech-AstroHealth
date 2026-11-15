@@ -1,37 +1,42 @@
 # Frontend acceptance evidence
 
-Baseline: main 0f377776083a37f6624be3700d3b853d5d2001ef. This continuation uses its own checkout and codex/frontend-api-and-demo-20261115 branch; it preserves Flight Log and the v0.1.0 contract.
+## Current integration status — 2026-11-15
+
+Flight Log and contract v0.1.0 are preserved. The original functional review was based on 0f37777; the backend has since delivered SQLite, REST routes and staged import, and 9e94071 fixes the historical import handoff. The [current integration report](integration_update_20261115.md) supersedes earlier bootstrap-only blocker descriptions.
 
 ## Evidence and scope
 
-The prior Flight Log review verified four-view navigation, desktop/mobile layouts, original indicator dates/units/provenance, chart/data-table behavior, alert detail, replay, journal cancel/save/rejected/unconfirmed recovery, Back/Forward, empty profiles, unavailable analysis and read failures. Captures and exact limits are in docs/design/redesign_rationale.md.
+The prior Flight Log review verified four-view navigation, desktop/mobile layouts, original indicator dates/units/provenance, chart/data-table behavior, alert detail, replay, journal cancel/save/rejected/unconfirmed recovery, Back/Forward, empty profiles, unavailable analysis and read failures. Captures and exact limits are in [the design rationale](../design/redesign_rationale.md).
 
-This continuation adds:
-- 94-pair contrast check and the existing shared mock response/write/error/replay checks.
-- 9 series/journal-default checks: chronology, four required chart metrics, empty/single-point data, actual React server rendering of empty/single-point chart components, separate contexts, gaps, zero sleep, unavailable references and correction metadata.
-- 15 Fetch-client checks over an actual test-only HTTP server: all shared successful response guards, health/profiles/summary/history/alerts, filters/pagination/cutoff, create/correct/retry, malformed JSON/schema, 404/422/500, disconnects/timeouts, wrong profiles/future data and wrong-day write confirmations.
-- Real FastAPI health request through the same Fetch client and all 8 existing backend tests.
+Current executed checks:
+- Clean npm ci, TypeScript and default/API-mode production builds.
+- All 94 contrast pairs, existing contract mock/write/error/replay checks, 9 series/default checks and 15 HTTP-fixture client checks.
+- Backend: 307 tests pass with 6 expected analysis/alert failures.
+- Actual FastAPI/SQLite: unchanged frontend Fetch client passes seven checks covering profiles, summary/history/cutoff/pagination, empty/unavailable states, 404/422, journal create/correct/retry and reading conflicts.
+- The new root scripts/check_local_integration.py additionally checks staged import over HTTP, historical replay handoff without deleting later records, CORS and journal/reading persistence after service restart.
 
-React server-render checks are not a claim of a new browser layout review. After the API mode initially displayed its Dashboard and correctly blocked new journal creates without configured metadata, the browser review was interrupted because Windows URL verification could not continue. Actual 200% zoom, the configured-create UI after reload, and the new failure/recovery controls still require browser verification. Tests cover transport behavior; they do not prove FastAPI/SQLite mission integration.
+Fixture transport tests are distinct from the real SQLite/HTTP smoke. Neither is a new browser review. The prior API Dashboard/unconfigured-create gate was seen through the HTTP fixture; the configured-create reload became blank and remains R1 below.
 
 ## Issue mapping
 
-| Issue | Functional evidence | Disposition |
+| Issue | Evidence | Disposition |
 | --- | --- | --- |
-| #10 Dashboard | Five typed snapshots with independent times/units/context; null/earlier values, shared mock source, navigation and narrow-layout checks from Flight Log review | Mock dashboard acceptance covered |
-| #11 Analytics | Four vital/sleep histories; period selection; reference/insufficient states; unit and actual component render edge-case checks; no cross-context interpolation | Mock analytics acceptance covered |
-| #12 Alerts | Shared normal/change/unavailable fixtures, detail/evidence/source, text/icon severity/status, read-only lifecycle, existing visual/error checks | Mock alerts acceptance covered |
-| #17 Journal | Form/mock workflow and HTTP adapter exist, writes preserve identity/input and require explicit create metadata | Keep open: actual API-backed persistence/history not verified |
-| #13 Integration | Explicit mock/API mode, central Fetch client, runtime wire guards, refresh actions and errors | Keep open: actual mission backend/ingestion absent |
-| #22 README/demo | Current setup, architecture/roles, truthful capabilities, source links, demo/fallback/reset and integration runbook | Keep open: final integrated rehearsal depends on #21 |
-| #21 E2E | Detailed procedure, real health proof, fixture/transport tests and known blockers | Keep open: no persisted mission path yet |
+| #10 Dashboard | Typed indicator snapshots, timestamps/units/context/null/earlier data, navigation and prior narrow-layout checks | Closed mock-scoped acceptance |
+| #11 Analytics | Four charts, periods, gaps/reference states, actual component-render empty/single-point checks | Closed mock-scoped acceptance |
+| #12 Alerts | Typed read-only detail/evidence/source, text/icon severity/status, no-alert/unavailable/failure distinction | Closed mock-scoped acceptance |
+| #13 API | Explicit mode, typed Fetch and real persisted responses, filters/cutoffs/errors | Open: rendered range/refresh/recovery and R1 review |
+| #17 Journal | Form/mock workflow, real create/correct/retry/history/summary and restart persistence | Open: rendered configured-create/error/focus/refresh review |
+| #21 E2E | Reproducible real import/API/client/restart smoke | Open: DATA-04, #14/#15 and full rendered scenario/accessibility |
+| #22 README/demo | Current setup, truthful capabilities/roles, CLI/config and distinct API/mock demo | Open: scientific source deliverables and final integrated rehearsal |
 
-The new Refresh data action reloads profiles/summary/history/alerts through the current source without rewriting URL selections. It is supplied on Dashboard/Analytics/Alerts; Journal refresh follows a confirmed write. A profile-list failure is now rendered by the shared page header, so non-Dashboard views do not silently show an empty workspace.
+The shared Refresh data action reloads through the selected source while preserving URL profile/range selections; Journal refresh follows confirmed writes. Profile-list failures render on every page header. These code paths still need the new rendered API acceptance checks; transport success does not prove those interactions.
 
-## Remaining limitations
+## API review reload observation — R1
 
-The build still emits Vite's advisory chunk-size warning. The backend owns request validation, record identity, scientific rules and database transactions; frontend guards check supported wire shapes and requested identity/cutoff, not medical correctness or every backend invariant. The original synthetic seed and the explicit test-only HTTP fixture must remain distinct from real biomedical source records and the planned 30-day generator.
+During an environment-file restart with concurrent mock/API dev servers, the API review tab became blank. API config/source selection and both production builds pass. Dependency caches are separated by mode, but the proposed correction is not rendered-retested. The [integration runbook](../architecture/integration_smoke_test.md) records exact steps, expected/actual result, owner and pending retest.
 
-### API review reload observation
+Windows Computer Use stopped because it could not verify the browser URL confidently. No further UI automation was attempted. Actual browser zoom 200%, new API configured-create/failure/recovery controls, and broader assistive/cross-browser checks remain pending.
 
-During an environment-file restart while running separate mock/API dev servers, the API review tab became blank. The API configuration and source-selection modules loaded successfully in a Node/Vite probe. Dev dependency caches are now separated by mode, preventing concurrent-mode cache replacement; that change still needs a rendered browser recheck. Browser automation stopped before configured-create and failure/recovery interaction tests could complete. This observation remains an explicit #13 integration review item, not a claim of a fixed/render-verified API UI.
+## Limits
+
+The approximately 787 kB JavaScript bundle still emits Vite's advisory chunk warning. Wire/profile/cutoff guards do not establish medical correctness or every backend invariant. Current real smoke data is the seven-day CORE-01 seed; it is distinct from real biomedical records and Ismael's pending 30-day DATA-04 export. API baselines/alerts remain not_implemented until #14/#15.

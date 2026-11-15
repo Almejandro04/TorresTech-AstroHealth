@@ -1,5 +1,7 @@
 # Autonomous AstroHealth work report
 
+> Historical snapshot at 36ea6b0, before backend PRs #26/#27/#28. Storage/API/import blockers below are superseded by the [current integration update](testing/integration_update_20261115.md). #9 was subsequently reopened and its replay cutoff corrected in 9e94071. Keep this section as the record of what was verified at that earlier stage.
+
 ## Scope
 
 Work requested by Jorge: #10, #11, #12, #17, #13, #22 and available portions of #21. Flight Log and contract v0.1.0 are preserved. Work uses a separate checkout and branch `codex/frontend-api-and-demo-20261115`, based on main `0f377776083a37f6624be3700d3b853d5d2001ef`.

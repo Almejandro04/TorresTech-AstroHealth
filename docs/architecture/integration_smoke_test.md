@@ -2,56 +2,57 @@
 
 Owners: Jorge (@Almejandro04) and Jhonatan (@TheJhonatan144); data support: Ismael (@BrandonFreire).
 
-## Evidence levels
+## Evidence levels after backend integration
 
-| Check | Evidence | Status |
+| Path | Evidence | Status |
 | --- | --- | --- |
-| UI contract fixture demo | Shared seed/mock checks, existing desktop/mobile review | Passed for the mock prototype |
-| Fetch wire transport | scripts/check-api.mjs: actual HTTP requests to a test-only fixture server | Passed; not FastAPI/SQLite evidence |
-| Real service bootstrap | scripts/check-health.mjs against FastAPI; backend pytest | Passed; only /api/health exists |
-| Imported mission -> SQLite -> API | Requires backend storage/API/ingestion and DATA-04 | Blocked |
-| Real reference/change/alert replay | Requires backend analysis/rules and imported scenario | Blocked |
-| Actual browser zoom 200%, new API-write/failure flows | Browser automation was interrupted before completion | Pending |
+| Mock Flight Log | Shared fixtures and prior desktop/mobile/form review | Passed for the mock scope; #10/#11/#12 closed |
+| Backend models/API/import | Full pytest suite after the replay fix | 307 passed; 6 expected #14/#15 xfails |
+| Frontend Fetch -> real FastAPI/SQLite | Unchanged client probe, seven checks over HTTP | Passed, including journal create/correct/retry and reading conflict |
+| Staged ingestion -> API | Day 3 -> 5, repeated import and backward cutoff | Passed with the seven-day CORE-01 seed |
+| Restart persistence | Stored journal correction/zero sleep/stable ID and single reading after server restart | Passed in an isolated database |
+| Actual API browser/form/error flows | R1 and configured-create/failure controls | Pending; no new browser review claimed |
+| DATA-04 -> analysis -> generated alert -> UI | #6/#14/#15 plus rendered integration | Pending |
 
-Never treat a test fixture server, a page-session mock save, or a successful health request as proof of database persistence.
+## One-command real smoke
 
-## Commands that exist now
+Install backend development requirements using the root README. From the repository root, with Node 22.13+ available:
 
-From frontend: npm ci, npm run check, npm run build, npm run preview. Individual checks: check:contrast, check:mocks, check:series, check:api. The read-only real-backend probe is npm run check:health -- http://127.0.0.1:8000.
+```powershell
+.\.venv\Scripts\python.exe scripts\check_local_integration.py
+# Optional explicit Node location
+.\.venv\Scripts\python.exe scripts\check_local_integration.py --node "C:\Program Files\nodejs\node.exe"
+```
 
-From backend: install requirements-dev.txt in an isolated venv, run python -m pytest and python -m pip check. Start python -m uvicorn app.main:app on an unoccupied port; configure ASTROHEALTH_CORS_ORIGINS for the actual browser origin. Exact PowerShell setup appears in the root README and backend README.
+The script creates a task-owned temporary database and loopback Uvicorn subprocess on an ephemeral port. It overrides only its child process environment, imports the seed through days 3/5/7, checks idempotence and historical cutoffs, performs an actual CORS preflight, runs the existing seven-check unchanged frontend Fetch probe, and restarts the service to compare persisted journal/readings. Owned processes/files are cleaned up even on failure. It never resets the configured working database or starts a browser.
 
-There is currently no verified generation/import/SQLite-reset/replay CLI in main. Obtain those commands from #6/#7/#9 when delivered. Do not manually fabricate database rows to make this smoke test pass.
+Additional checks from frontend: npm ci, npm run check and npm run build. The fixture HTTP suite is still test-only; it is distinct from the real smoke. From backend: python -m pytest and python -m pip check. The read-only check:health tests only service health.
 
-## Clean-start integrated sequence, once dependencies land
+## Interactive integrated sequence
 
-1. Record commit SHA, Python/Node versions, synthetic manifest/schema version, generator seed and supported commands.
-2. Create an isolated demo database using the backend's documented path/configuration. Generate/import/reset through the documented CLI. Repeating the supported import must follow its idempotency policy.
-3. Start FastAPI and Vite. Set VITE_DATA_SOURCE=api and the correct API base. Allow the exact frontend origin through CORS; no wildcard is required.
-4. Confirm profiles, readings, journal, summary and alerts respond with v0.1.0 envelopes. Unknown profiles must return normalized 404 and malformed fields/filters 422.
-5. Compare the selected astronaut/day, every latest snapshot, units, original timestamps/context/provenance and chart/table values with persisted source records. Use backend-generated IDs, not assumed fixture IDs.
-6. Select the reference period, then advance the documented replay through introduced changes. Refresh data without losing the selected profile/range. Confirm no future readings, reference windows or later resolution status leak into historical views.
-7. Verify a read-only alert explanation includes the observed value/pattern, individual reference/window, rule version, attention level and source. Repeat replay and confirm deterministic output/deduplication.
-8. Check empty history, null metric, isolated spike, insufficient reference and unavailable-analysis states separately. No error or unknown state may appear as normal health.
-9. Stop the API. All views must distinguish failed reads from empty data and offer a recovery path. Restart and retry. Do not silently switch to mocks.
-10. For Journal, configure the imported mission source/effective UTC time before enabling creates. Verify 201 create, 200 correction/exact retry, stable daily ID, retained input on 422/network failure and uncertainty after an unconfirmed POST. Reload and restart the backend to prove persistence; verify summary/sleep history refresh.
-11. Run at desktop/mobile widths and actual 200% browser zoom in both themes; use keyboard/assistive technology for focus, dialogs, radios/selects, skip link and chart tables.
-12. Log each defect with exact steps, expected/actual values, owner and commit. Recheck affected paths after fixes.
+1. Record commit SHA, Python/Node versions, manifest/schema version and supported commands. The current supported input is docs/examples/mission_seed.json, not the still-pending DATA-04 export.
+2. Use a new absolute ASTROHEALTH_DB_PATH. Import through day 3 with python -m app.database import-json ../docs/examples/mission_seed.json --until-day 3. The import initializes missing schema. An offline reset loads the full seed; it is not an empty replay start.
+3. Start FastAPI. Set VITE_DATA_SOURCE=api and the correct API base before starting Vite; allow the exact browser origin via ASTROHEALTH_CORS_ORIGINS.
+4. Compare profile identity/day and every latest snapshot, units, original timestamps/context/provenance and chart/table values with persisted API records. GET profiles/readings/journal/summary/alerts must use v0.1.0 envelopes; unknown profiles return normalized 404 and invalid fields/filters 422.
+5. In a second terminal with the SAME database path, import through day 5, repeat it, then day 7. Refresh Flight Log without losing profile/range. Confirm stable IDs and no duplicates. Historical day 3 must exclude later observations; the import report's post_import.cutoffs supplies that selected view, while latest_stored_cutoffs reports physical storage.
+6. Treat not_implemented baselines/alerts as unavailable analysis. Do not expect a generated warning until #14/#15 land. After that delivery, replay the introduced deviation and compare reference/window, observed pattern, rule version, attention level and provenance. Repeat for determinism/deduplication.
+7. Check empty profile/history, null metric, isolated spike, insufficient versus unavailable reference and failed reads separately. Unknown data must not look normal.
+8. Configure explicit imported journal source/time before creates. Verify 201 create, 200 correction/retry, stable ID and summary/sleep history refresh; retain draft on 422 or failure and uncertainty after an unconfirmed POST. Restart with the same database and recheck persistence.
+9. Stop/restart the API and verify rendered error/retry on all views. Never fall back to fixtures silently.
+10. Recheck R1 below, desktop/mobile layouts, actual 200% zoom, both themes, keyboard focus/dialogs/radios/skip link and accessible chart tables.
+11. Once DATA-04 arrives, repeat the import/identity/history/scenario checks against its real manifest/export, then repeat after the analysis/alert engines land. Keep #9/#13/#17/#21/#22 open until their individual remaining criteria are met.
 
-## Defect record template
+## Defect recording
 
-| Field | Record |
-| --- | --- |
-| Scenario / commit / source | Exact fixture or imported mission and revision |
-| Steps | Commands, route/profile/range and action |
-| Expected / actual | Include API values and UI evidence |
-| Component / owner | Frontend, backend or data |
-| Priority / issue | P0 blocker versus deferred follow-up |
-| Fix / retest | Commit and observed outcome |
+Record scenario/commit/source, exact commands and route/profile/range, expected/actual API and UI values, component/owner, issue/priority, fix commit and observed retest. Transport results do not stand in for browser layout/focus/error checks.
 
-## Current blockers
+## Remaining blockers
 
-#6 synthetic generation, #7 storage, #8 mission API, #9 ingestion/replay, #14 analysis and #15 alert engine are not delivered in the reviewed main baseline. Do not close #13, #17 or #21 on transport-only evidence. Final end-to-end demo rehearsal in #22 remains pending.
+- #6: Ismael's reproducible mission dataset; the existing seven-day fixture is not that deliverable.
+- #14/#15: actual baseline/trend calculations and experimental alert evaluation. Six strict expected failures reflect those missing cases.
+- #13/#17: rendered API view/write/error acceptance, including R1 below.
+- #21/#22: final supported end-to-end rehearsal, actual zoom and broader assistive/cross-browser review.
+- A documented rest/null discrepancy for not_implemented baseline examples remains in the backend README; the HTTP shape guard accepts the pending null context, and no shared contract/fixture is edited here.
 
 ## R1 — API review reload became blank
 

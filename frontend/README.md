@@ -1,6 +1,6 @@
 # AstroHealth frontend — Flight Log
 
-English React/TypeScript prototype for [FRONTEND-01 (#2)](https://github.com/Almejandro04/TorresTech-AstroHealth/issues/2), reviewed in draft PR #24. Flight Log is Claude's implemented design, continued with targeted fixes and verification. The former sidebar/teal scaffold is superseded. See [design rationale and verification](../docs/design/redesign_rationale.md).
+English React/TypeScript prototype for [FRONTEND-01 (#2)](https://github.com/Almejandro04/TorresTech-AstroHealth/issues/2), integrated through PR #24. Flight Log is Claude's implemented design, continued with targeted fixes and verification. The former sidebar/teal scaffold is superseded. See [design rationale and verification](../docs/design/redesign_rationale.md).
 
 ## Run locally
 
@@ -42,7 +42,7 @@ The Fetch adapter implements profiles, summary, vital/journal histories, alert f
 
 Mock journal changes last only for the current page session and reset on reload. New mock entries retain the fixture convention 08:00 UTC / SYN-CORE-001. API creates instead require explicit VITE_JOURNAL_SOURCE_ID and VITE_JOURNAL_TIME_UTC (HH:MM:SS), matching the imported mission and agreed effective observation time; otherwise new creates stay disabled with an explanation. Existing corrections preserve their original source/time.
 
-The backend in the reviewed main baseline serves only /api/health. Actual mission/SQLite integration is still blocked: #13 and #17 remain open. Run npm run check:health -- http://127.0.0.1:8000 for a read-only real-backend probe. It proves only service health.
+The backend now serves persisted profiles, readings, journal, summary and alerts, plus JSON/CSV import and staged days. The unchanged Fetch client passes seven real FastAPI/SQLite checks, including journal create/correct/retry and history refresh; restart persistence is verified. Run the root scripts/check_local_integration.py for an isolated repeatable smoke. #13/#17 remain open for rendered API workflow acceptance; #14/#15 still return explicit not_implemented analysis/alerts. The read-only check:health still proves only service health.
 
 The mock engine derives its data from docs/examples/mission_seed.json. npm run check:mocks verifies the shared examples and replay policies. scripts/fixture-api.mjs and serve-fixture-api.mjs are explicitly test-only HTTP shims for checking the transport, not the backend deliverable or a second production API.
 
@@ -67,4 +67,4 @@ See [the root README](../README.md), [demo runbook](../docs/demo_runbook.md) and
 
 See the rationale for executed checks and the manual smoke sequence. The production JavaScript bundle is approximately 787 kB / 236 kB gzip; Vite's 500 kB warning is retained. Splitting chart code can be considered later rather than hiding the warning.
 
-Functional acceptance evidence for #10/#11/#12 is in [frontend_acceptance.md](../docs/testing/frontend_acceptance.md). API-backed Journal, live storage/API, generated alerts and end-to-end testing (#21) remain separate. This prototype uses fictional synthetic records and experimental explanations, not medically validated diagnoses or NASA endorsement.
+Functional acceptance evidence for #10/#11/#12 is in [frontend_acceptance.md](../docs/testing/frontend_acceptance.md). Real HTTP storage and journal persistence are verified; API browser completion, generated alerts and full end-to-end testing (#21) remain separate. See the [current integration update](../docs/testing/integration_update_20261115.md). This prototype uses fictional synthetic records and experimental explanations, not medically validated diagnoses or NASA endorsement.

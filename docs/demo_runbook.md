@@ -2,7 +2,7 @@
 
 ## Scope and reproducibility
 
-The supported rehearsal is the **frontend mock demonstration** from the committed contract seed. FastAPI currently serves only health. This is not a claim of Dataset -> SQLite -> API -> UI integration. Use the integration runbook for that later path.
+There are two explicit rehearsals: the **frontend mock demonstration** below, and **real persisted API monitoring** using the seven-day contract seed. FastAPI/SQLite transport, staged replay and journal persistence pass the isolated smoke. The new API browser workflow remains pending review. Calculated baselines and generated alerts remain #14/#15; DATA-04 generation remains #6.
 
 A clean checkout, npm ci and npm run dev in frontend suffice. With no local override the source is mock. If a local API override exists, deliberately set VITE_DATA_SOURCE=mock and restart Vite. The UI must show Synthetic demo. Do not use the HTTP test fixture as evidence that the team's backend is complete.
 
@@ -37,13 +37,15 @@ For a shorter demo, omit the journal step. It is P1 and does not block the core 
 - Next journal save -> Rejected field / Connection failure / Unconfirmed: preserve input, explain uncertainty and retry. Settings apply once. Reset with Reload or Restore seed data.
 - Navigate away from a dirty journal: Keep editing preserves input; Discard changes is explicit.
 
-## Backend connection rehearsal — blocked until available
+## Real API rehearsal — monitoring and persistence
 
-1. Check the current backend issue/README commands rather than inventing a generator or database reset command.
-2. Generate/import the agreed synthetic mission, retain its manifest and record the actual backend-generated record IDs.
-3. Start FastAPI and configure exact frontend CORS. Run npm run check:health -- http://127.0.0.1:8000.
-4. Enable VITE_DATA_SOURCE=api, configure the base URL, and restart Vite. The UI must identify API synthetic data.
-5. Follow docs/architecture/integration_smoke_test.md for persisted values, analysis, safe replay and journal writes.
-6. Only claim end-to-end completion once these values survive backend restart and the actual ingestion/rule flow is verified.
+1. Follow the root README setup. Use a NEW disposable database, exact CORS origins and the existing import CLI; keep the absolute database path available to both terminals.
+2. Run the automatic smoke first from the repository root: `.\.venv\Scripts\python.exe scripts\check_local_integration.py`. It creates its own independent database/server; passing it does not seed the interactive database.
+3. In the interactive backend terminal, import the CORE-01 seed through day 3 and start FastAPI. Enable API mode in the frontend, with the configured API base URL and explicit journal manifest/time. Restart Vite. The mission bar must identify API synthetic data.
+4. Confirm AST-001/day 3 against the API summary. AST-002 must remain an empty profile. Analysis and alert evaluation must show unavailable, not evaluated-no-alerts or a healthy result.
+5. In another backend terminal configured with the SAME absolute database path, import through day 5, then choose Refresh data in Flight Log. Verify the new latest day and chart/table observations without losing the selected profile/range. Import through day 7 to show the missing respiratory value and retained earlier dashboard timestamp.
+6. For historical replay, select day 3 in Flight Log. For direct API consumers, pass the import report's `post_import.cutoffs[astronaut_id]` as `as_of`; `latest_stored_cutoffs` reports physical storage separately. Importing backwards does not delete future rows or set a global API clock.
+7. Create/correct a daily Journal entry with the imported source and effective time. Compare its stable ID, summary and sleep history. Restart FastAPI using the same database, reload and verify persistence. A mock save is session-only; an API save is stored in SQLite.
+8. Stop/restart the API and test visible errors/retry, then keyboard and actual 200% zoom. These browser actions are a remaining manual acceptance sequence, not a claim of checks already performed by the CLI.
 
-Missing backend/data commands are tracked by #7/#8/#9/#6/#14/#15. The outline and mock fallback are ready; the final integrated rehearsal remains open in #21 and #22.
+The automatic transport/persistence subset is verified. Final rendered rehearsal is open in #13/#17/#21/#22, including R1 (API tab blank after environment restart) recorded in the integration runbook. Use the explicitly labeled mock fallback for the illustrative baseline/alert explanation until #14/#15 are integrated. Never present the mock warning as a generated API alert.
