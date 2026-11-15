@@ -26,7 +26,7 @@ await check('health and profile envelopes', async () => {
   assert.equal((await api.getHealth()).data.status, 'ok')
   assert.ok((await api.getAstronauts()).data.some(p => p.astronaut_id === 'AST-001'))
 })
-await check('summary snapshots, calculated baselines and pending alerts', async () => {
+await check('summary snapshots, calculated baselines and evaluated alerts', async () => {
   const { data } = await api.getSummary('AST-001')
   assert.equal(data.latest_metrics.respiratory_rate_bpm.mission_day, 6)
   // Seed days 1-5 hold one repeated value per indicator, so each mean is that value.
@@ -41,8 +41,8 @@ await check('summary snapshots, calculated baselines and pending alerts', async 
   assert.deepEqual([early.status, early.value, early.sample_count], ['insufficient_data', null, 5])
   const day6 = (await api.getSummary('AST-001', { as_of: '2026-11-06T00:00:00Z' })).data.baselines.heart_rate_bpm
   assert.deepEqual([day6.status, day6.value], ['available', 72])
-  assert.equal(data.alert_summary.evaluation_status, 'not_implemented')
-  assert.equal(data.alert_summary.active_count, null)
+  // DEMO-HR-CHANGE (#15): days 6-7 average 81 against a reference of 72.
+  assert.deepEqual([data.alert_summary.evaluation_status, data.alert_summary.active_count, data.alert_summary.highest_severity], ['available', 1, 'warning'])
 })
 await check('history, pagination, cutoff and view guards', async () => {
   const query = { from_day: 2, to_day: 6, limit: 2, offset: 1, as_of: '2026-11-04T23:59:59Z' }
@@ -52,12 +52,18 @@ await check('history, pagination, cutoff and view guards', async () => {
   assert.ok(matchesView(readings, 'AST-001', query.as_of))
   assert.ok((await api.getJournal('AST-001', query)).data.length > 0)
 })
-await check('empty profile and unevaluated alerts', async () => {
-  assert.equal((await api.getSummary('AST-002')).data.mission_day, null)
+await check('empty profile, insufficient data and the explainable alert', async () => {
+  const empty = await api.getSummary('AST-002')
+  assert.equal(empty.data.mission_day, null)
+  assert.equal(empty.data.alert_summary.evaluation_status, 'insufficient_data')
   assert.deepEqual((await api.getReadings('AST-002')).data, [])
-  const alerts = await api.getAlerts('AST-001', { status: 'active' })
-  assert.deepEqual(alerts.data, [])
-  assert.equal(alerts.meta.evaluation_status, 'not_implemented')
+  const day6 = await api.getAlerts('AST-001', { as_of: '2026-11-06T23:59:59Z' })
+  assert.deepEqual([day6.meta.evaluation_status, day6.data.length], ['available', 0])
+  const day7 = await api.getAlerts('AST-001', { status: 'active', as_of: '2026-11-07T23:59:59Z' })
+  assert.equal(day7.meta.evaluation_status, 'available')
+  assert.deepEqual(day7.data.map(a => [a.rule_id, a.observed_value, a.baseline_value, a.window_start, a.window_end]),
+    [['DEMO-HR-CHANGE', 81, 72, '2026-11-06T12:00:00Z', '2026-11-07T12:00:00Z']])
+  assert.ok(matchesView(day7, 'AST-001', '2026-11-07T23:59:59Z'))
 })
 await check('404 and 422 reach real client errorDetails', async () => {
   await assert.rejects(api.getSummary('AST-999'), e => e.kind === 'not_found' && e.code === 'ASTRONAUT_NOT_FOUND')

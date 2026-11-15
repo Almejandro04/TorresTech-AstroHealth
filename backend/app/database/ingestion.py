@@ -205,10 +205,18 @@ def import_mission(path: Path, *, readings: str | None = None, journal: str | No
                 if until_day and any(r.mission_day > until_day for r in records):
                     later.append(profile_id)
             days = [r.mission_day for r in (*bundle.readings, *bundle.journal) if until_day is None or r.mission_day <= until_day]
-    # Confirmed import event for a future #14/#15 caller. No callback is run:
-    # consumers can reevaluate the selected replay view at cutoffs after commit.
-    # Later stored data stays intact and is reported separately; it must not
-    # leak into a historical analysis through this handoff.
+    # After the commit, evaluate the alert rule (#15) over the stored history
+    # and report its status at each replay cutoff. The evaluation is
+    # deterministic and idempotent; later stored data cannot leak into a
+    # cutoff's view.
+    from app.services import views  # Lazy: services import app.database.
+
+    evaluation = {}
+    with closing(connect()) as conn:
+        for profile_id, cutoff in cutoffs.items():
+            astronaut = repo.get_astronaut(conn, profile_id)
+            if astronaut is not None:
+                evaluation[profile_id] = views.alert_view(conn, astronaut, cutoff)[0]
     return dict(committed=True, input=str(path), destination=str(database_path().resolve()),
                 schema_version=bundle.schema_version, format="csv" if readings is not None else "json",
                 requested_day=until_day, selected_day_range=[min(days), max(days)] if days else None,
@@ -216,4 +224,4 @@ def import_mission(path: Path, *, readings: str | None = None, journal: str | No
                 warning="Later observations remain stored; use post_import.cutoffs as as_of for this replay view." if later else None,
                 post_import=dict(profiles=list(cutoffs), cutoffs=cutoffs,
                                  latest_stored_cutoffs=latest_stored_cutoffs,
-                                 evaluation_status="not_implemented"))
+                                 evaluation_status=evaluation))

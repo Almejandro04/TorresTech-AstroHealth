@@ -93,6 +93,11 @@ def _examples(names: tuple[str, ...], part: str) -> dict[str, dict[str, Any]]:
             # editing the shared fixtures; a test compares it to the live API.
             if part == "response" and name == "summary_before_analysis_is_implemented":
                 value["data"]["baselines"] = deepcopy(_SEED_BASELINES_DAY_7)
+                evaluated = _CASES.get("summary_introduced_change_and_missing_metric")
+                if evaluated is not None:
+                    value["data"]["alert_summary"] = deepcopy(
+                        evaluated["response"]["body"]["data"]["alert_summary"]
+                    )
             found[name] = {"summary": name.replace("_", " "), "value": value}
     return found
 

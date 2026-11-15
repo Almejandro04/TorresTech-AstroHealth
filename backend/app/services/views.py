@@ -110,13 +110,31 @@ def page(items: list[RecordT], limit: int, offset: int) -> list[RecordT]:
 def alert_view(
     conn: sqlite3.Connection, astronaut: Astronaut, as_of: str | None
 ) -> tuple[EvaluationStatus, list[HealthAlert]]:
-    """Alert evaluation as seen at `as_of`: its status and its alerts.
+    """Alert evaluation as seen at `as_of`: its status and its alerts (#15).
 
-    The alert engine (#15) replaces this body. Until then the evaluation is
-    reported as not implemented, and no alerts are returned, so that an empty
-    list is never read as a completed evaluation.
+    The rule is evaluated (idempotently) over the full persisted history, then
+    viewed at the cutoff: only alerts detected at or before `as_of`, and one
+    resolved after it reads as active with `resolved_at` null. The status is
+    `available` only when the rule's baseline is available at the cutoff.
     """
-    return "not_implemented", []
+    from app.services import alert_engine, alert_rules
+
+    stored = alert_engine.evaluate_and_store(conn, astronaut)
+    readings = repository.list_readings(conn, astronaut.astronaut_id)
+    baseline = analysis.analyze_indicator(
+        astronaut, readings, [], alert_rules.INDICATOR, as_of, alert_rules.CONTEXT
+    ).baseline
+    if as_of is None or baseline.status != "available":
+        return "insufficient_data", []
+    cutoff = parse_timestamp(as_of)
+    seen = []
+    for alert in stored:
+        if parse_timestamp(alert.timestamp) > cutoff:
+            continue
+        if alert.resolved_at is not None and parse_timestamp(alert.resolved_at) > cutoff:
+            alert = alert.model_copy(update={"status": "active", "resolved_at": None})
+        seen.append(alert)
+    return "available", seen
 
 
 def _baselines(

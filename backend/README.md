@@ -24,7 +24,9 @@ BACKEND-06 (#9) adds local JSON/CSV ingestion and staged insertion by mission da
   (`app/services/analysis.py`). See "Baselines and trend analysis" below.
 
 Not implemented: HTTP exposure of trends and statistics (needs a contract
-agreement), alert evaluation/rules (#15), authentication or deployment. Startup initializes
+agreement), alert rules beyond the single demo rule, authentication or deployment.
+BACKEND-05 (#15): one explainable synthetic rule, `DEMO-HR-CHANGE`; see
+[`docs/architecture/alert_rules.md`](../docs/architecture/alert_rules.md). Startup initializes
 missing tables without seeding, resetting or deleting existing data. Each
 request opens/closes its own SQLite connection with foreign keys enabled.
 
@@ -174,9 +176,10 @@ Health/profiles use `meta.as_of=null`. POST responses use the effective latest
 observation cutoff, so their data passes the frontend's `matchesView` guard.
 
 Baselines are calculated (#14): `available` or `insufficient_data`, never
-`not_implemented`. Alerts use `not_implemented`, `data=[]`, `total=0`;
-summary active count/severity are null and recent alerts empty until #15.
-An empty unevaluated alert list is not an all-clear.
+`not_implemented`. Alerts (#15): `evaluation_status` is `available` when the
+rule's heart-rate baseline is available at the cutoff (with or without
+alerts), otherwise `insufficient_data` with `data=[]`, null active
+count/severity and no recent alerts. That is never an all-clear.
 
 #### Baselines and trend analysis (#14)
 
@@ -213,7 +216,7 @@ The first is `insufficient_data` with 5 samples; the second is `available` with
 value 72. Hand-calculated cases are in `tests/test_analysis.py` and
 `tests/test_analysis_api.py`.
 
-Still pending: alert rules and evaluation (#15); the 30-day demonstration
+Still pending: the 30-day demonstration
 dataset (DATA-04), which is not needed by these calculations; and agreeing with
 the frontend how trends are exposed before any HTTP field is added.
 
@@ -261,8 +264,9 @@ Known differences from the shared fixtures (contract and fixtures unchanged):
   returns the first and last observation used and its own method name. Status,
   value, sample count and context match.
 
-Six strict xfails remain and all depend only on the alert evaluation (#15).
-Their baselines and other fields are tested separately.
+Four strict xfails remain: two by the #14 policy difference above
+(`summary_normal_reference_fixture`, `evaluated_no_active_alerts`) and two that
+show the earlier not-implemented stage. Their other fields are tested separately.
 
 ## Español
 
@@ -282,7 +286,9 @@ BACKEND-06 (#9) añade importación local JSON/CSV e inserción por día de misi
   (`app/services/analysis.py`). Consulta "Referencias y análisis de tendencia".
 
 Sin implementar: exposición HTTP de tendencias y estadísticas (requiere acuerdo
-de contrato), reglas/evaluación de alertas (#15), autenticación y despliegue. El arranque
+de contrato), reglas de alerta adicionales a la regla de demo, autenticación y
+despliegue. BACKEND-05 (#15): una regla sintética explicable, `DEMO-HR-CHANGE`;
+consulta [`docs/architecture/alert_rules.md`](../docs/architecture/alert_rules.md). El arranque
 crea tablas faltantes sin sembrar, reiniciar ni borrar datos. Cada petición abre
 y cierra su conexión SQLite con claves foráneas activadas.
 
@@ -430,9 +436,10 @@ Los POST usan el corte efectivo de la última observación, compatible con
 `matchesView` del cliente. Un error nunca se convierte en historia vacía.
 
 Los baselines se calculan (#14): `available` o `insufficient_data`, nunca
-`not_implemented`. Hasta #15, las alertas usan `not_implemented`, colección
-vacía y total cero; el summary mantiene conteo/severidad null y alertas recientes
-vacías. Eso expresa evaluación pendiente, no ausencia comprobada de alertas.
+`not_implemented`. Alertas (#15): `evaluation_status` es `available` cuando el
+baseline de frecuencia cardíaca de la regla está disponible en el corte (con o
+sin alertas); si no, `insufficient_data` con `data=[]`, conteo/severidad null y
+sin alertas recientes. Eso nunca equivale a "sin alertas".
 
 #### Referencias y análisis de tendencia (#14)
 
@@ -472,7 +479,7 @@ La primera es `insufficient_data` con 5 muestras; la segunda es `available` con
 valor 72. Los casos calculados a mano están en `tests/test_analysis.py` y
 `tests/test_analysis_api.py`.
 
-Sigue pendiente: reglas y evaluación de alertas (#15); el conjunto de
+Sigue pendiente: el conjunto de
 demostración de 30 días (DATA-04), que estos cálculos no necesitan; y acordar
 con el frontend cómo se exponen las tendencias antes de añadir campos HTTP.
 
@@ -520,8 +527,9 @@ sin cambios):
   devuelve la primera y la última observación usadas y su propio nombre de
   método. Estado, valor, cantidad de muestras y contexto coinciden.
 
-Quedan seis xfail estrictos y todos dependen únicamente de la evaluación de
-alertas (#15). Sus baselines y demás campos se prueban aparte.
+Quedan cuatro xfail estrictos: dos por la diferencia de política del #14
+(`summary_normal_reference_fixture`, `evaluated_no_active_alerts`) y dos que
+muestran la etapa anterior sin análisis. Sus demás campos se prueban aparte.
 
 ## Local ingestion and staged demo (#9) — English
 
@@ -607,8 +615,8 @@ reevaluation. `post_import.latest_stored_cutoffs` separately identifies the late
 observations physically stored. When replaying day 3 after day 5, the former
 excludes days 4–5; the latter still reports day 5. No rows are deleted, and an
 unfiltered API request still sees the latest stored data. An empty profile has
-a null cutoff. No callback or engine is run; evaluation_status remains
-not_implemented. No fabricated alerts or baseline changes are introduced.
+a null cutoff. After the commit the alert rule is evaluated and
+`post_import.evaluation_status` gives, per profile, the status at its cutoff.
 
 Implementation checked with seven-day CORE-01 fixtures. Final validation with
 Ismael's DATA-04 dataset is pending; these files are not DATA-04. The #8 pending
@@ -677,8 +685,8 @@ vacío de replay. Se conservan sus protecciones de identidad, enlaces y auxiliar
 Solo se admite synthetic; terrestrial_biomedical corresponde a DATA-03.
 No hay generación de una misión de 30 días, reloj global, scheduler, rutas
 nuevas, baselines ni reglas de alertas. Tras el COMMIT, `post_import` entrega
-perfiles y cutoffs de la vista seleccionada para conectar #14/#15; no ejecuta
-un hook vacío ni declara análisis realizado. La API conserva not_implemented.
+perfiles y cutoffs de la vista seleccionada. Después se evalúa la regla de
+alertas y `post_import.evaluation_status` da, por perfil, el estado en su corte.
 
 Implementación comprobada con fixtures CORE-01 de 7 días.
 Validación final con el dataset DATA-04 de Ismael pendiente.

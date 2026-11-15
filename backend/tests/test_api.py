@@ -17,16 +17,19 @@ from conftest import EXAMPLES, journal_body, reading_body
 
 CASES = json.loads((EXAMPLES / "api_examples.json").read_text(encoding="utf-8"))["cases"]
 
-# Fixture cases whose expected body needs an alert evaluation (#15). Their
-# other fields are compared in separate tests, including baselines (#14).
-ANALYSIS_CASES = {
-    "summary_normal_reference_fixture",
-    "summary_introduced_change_and_missing_metric",
-    "summary_before_later_same_day_reading",
-    "summary_profile_without_observations",
-    "evaluated_no_active_alerts",
-    "explainable_synthetic_alert",
+# Fixture cases that cannot match exactly, with the documented reason. Their
+# other fields are compared in a separate test.
+POLICY_REASON = (
+    "#14 policy: baseline available from day 6; the fixture shows it at the end of day 5"
+)
+EARLIER_STAGE_REASON = "earlier stage: the fixture shows analysis not implemented"
+XFAIL_REASONS = {
+    "summary_normal_reference_fixture": POLICY_REASON,
+    "evaluated_no_active_alerts": POLICY_REASON,
+    "alerts_not_implemented_is_not_an_all_clear": EARLIER_STAGE_REASON,
+    "summary_before_analysis_is_implemented": EARLIER_STAGE_REASON,
 }
+ANALYSIS_CASES = set(XFAIL_REASONS)
 AST = "/api/astronauts/AST-001"
 ORIGIN = "http://localhost:5173"
 
@@ -89,8 +92,8 @@ def test_all_fixture_cases_are_covered() -> None:
         pytest.param(
             case,
             id=case["name"],
-            marks=[pytest.mark.xfail(strict=True, reason="#15: needs the alert evaluation")]
-            if case["name"] in ANALYSIS_CASES
+            marks=[pytest.mark.xfail(strict=True, reason=XFAIL_REASONS[case["name"]])]
+            if case["name"] in XFAIL_REASONS
             else [],
         )
         for case in CASES
@@ -102,13 +105,17 @@ def test_fixture_case(client: TestClient, case: dict) -> None:
     assert response.status_code == case["response"]["status"]
     expected = copy.deepcopy(case["response"]["body"])
     actual = response.json()
-    if case["name"] == "summary_before_analysis_is_implemented":
-        # Not an xfail: this fixture shows the stage before #14, so its
-        # baselines are legitimately superseded. Every other field, including
-        # the still-pending alert summary, is compared intact.
-        assert {b["status"] for b in expected["data"]["baselines"].values()} == {"not_implemented"}
-        assert {b["status"] for b in actual["data"]["baselines"].values()} == {"available"}
-        del expected["data"]["baselines"], actual["data"]["baselines"]
+    data = expected.get("data")
+    if isinstance(data, dict) and "baselines" in data:
+        # Documented #14 difference: illustrative fixture baselines use the
+        # window's calendar bounds and "fixture_reference_mean"; the API
+        # reports the observations used and its own method. Status, value,
+        # sample count and context are still compared.
+        for name, baseline in data["baselines"].items():
+            if baseline["method"] == "fixture_reference_mean":
+                for key in ("reference_start", "reference_end", "method"):
+                    baseline.pop(key)
+                    actual["data"]["baselines"][name].pop(key)
     assert actual == expected
 
 
@@ -351,20 +358,19 @@ def test_summary_metrics_keep_their_own_observation_day(client: TestClient) -> N
     assert metrics["mood_score"]["value"] == 2 and isinstance(metrics["mood_score"]["value"], int)
 
 
-def test_alert_evaluation_is_still_reported_as_not_implemented(client: TestClient) -> None:
+def test_alert_evaluation_is_available_with_the_seed(client: TestClient) -> None:
     data = client.get(f"{AST}/summary").json()["data"]
 
-    # Baselines are calculated (#14, see test_analysis_api.py); alerts are not.
     assert {baseline["status"] for baseline in data["baselines"].values()} == {"available"}
-    assert data["alert_summary"] == {
-        "evaluation_status": "not_implemented", "active_count": None, "highest_severity": None, "recent": [],
-    }
+    summary = data["alert_summary"]
+    assert (summary["evaluation_status"], summary["active_count"], summary["highest_severity"]) == (
+        "available", 1, "warning",
+    )
 
-    for params in ({}, {"status": "active"}, {"status": "resolved"}):
-        alerts = client.get(f"{AST}/alerts", params=params).json()
-        assert alerts["data"] == []
-        assert alerts["meta"]["total"] == 0
-        assert alerts["meta"]["evaluation_status"] == "not_implemented"
+    for status, count in ((None, 1), ("active", 1), ("resolved", 0)):
+        alerts = client.get(f"{AST}/alerts", params={"status": status} if status else None).json()
+        assert alerts["meta"]["total"] == count == len(alerts["data"])
+        assert alerts["meta"]["evaluation_status"] == "available"
     assert_error(client.get(f"{AST}/alerts", params={"status": "acknowledged"}), 422, "VALIDATION_ERROR")
 
 
@@ -522,7 +528,7 @@ def test_openapi_lists_every_endpoint_with_models_and_examples(client: TestClien
 
     alerts = paths["/api/astronauts/{astronaut_id}/alerts"]["get"]
     assert ref(alerts, "200") == "AlertListResponse"
-    assert examples(alerts, "200") == {"alerts_not_implemented_is_not_an_all_clear"}
+    assert examples(alerts, "200") == {"explainable_synthetic_alert"}
     assert {p["name"] for p in alerts["parameters"]} == {
         "astronaut_id", "limit", "offset", "from_day", "to_day", "as_of", "status",
     }

@@ -19,7 +19,7 @@ from app.routes.common import (
     documented,
     request_examples,
 )
-from app.services import views
+from app.services import alert_engine, views
 
 router = APIRouter(prefix="/api/astronauts/{astronaut_id}/journal", tags=["journal"])
 
@@ -79,6 +79,7 @@ def save_journal(
     with database() as conn:
         result = repository.upsert_journal(conn, astronaut_id, payload)
         astronaut = repository.require_astronaut(conn, astronaut_id)
+        alert_engine.evaluate_and_store(conn, astronaut)
         cutoff = views.resolve_as_of(conn, astronaut, None)
     if result.status == "created":
         response.status_code = 201
