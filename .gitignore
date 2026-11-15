@@ -16,6 +16,9 @@ __pycache__/
 
 .pytest_cache/
 
+# Downloaded raw datasets are never committed (see data/README.md)
+data/raw/
+
 # Local SQLite databases and their side files
 *.db
 *.db-journal
