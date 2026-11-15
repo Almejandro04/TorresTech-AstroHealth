@@ -214,3 +214,35 @@ def test_invalid_json_constants_and_duplicate_keys_leave_data_unchanged(tmp_path
     path=tmp_path/'bad.json'; path.write_text(text)
     with pytest.raises(ImportFailure): import_mission(path)
     assert snapshot()==before
+
+
+@pytest.mark.parametrize("use_csv", [False, True])
+def test_backward_replay_handoff_excludes_later_stored_data(tmp_path, use_csv):
+    path = csv_files(tmp_path) if use_csv else bundle_file(tmp_path)
+    options = dict(readings="readings.csv", journal="journal.csv") if use_csv else {}
+    import_mission(path, until_day=5, **options)
+    before = snapshot()
+    report = import_mission(path, until_day=3, **options)
+    assert snapshot() == before  # Historical replay never deletes later records.
+    assert report["profiles_with_later_data"] == ["AST-001"]
+    handoff = report["post_import"]
+    assert handoff["cutoffs"] == {"AST-001": "2026-11-03T12:00:00Z", "AST-002": None}
+    assert handoff["latest_stored_cutoffs"] == {"AST-001": "2026-11-05T12:00:00Z", "AST-002": None}
+    with TestClient(create_app()) as client:
+        params = {"as_of": handoff["cutoffs"]["AST-001"]}
+        summary = client.get("/api/astronauts/AST-001/summary", params=params).json()
+        assert summary["data"]["mission_day"] == 3
+        readings = client.get("/api/astronauts/AST-001/readings", params=params).json()
+        journal = client.get("/api/astronauts/AST-001/journal", params=params).json()
+        assert readings["meta"]["total"] == journal["meta"]["total"] == 3
+        assert client.get("/api/astronauts/AST-001/summary").json()["data"]["mission_day"] == 5
+
+
+def test_replay_handoff_keeps_exact_journal_cutoff_and_unbounded_latest(tmp_path):
+    exact = "2026-11-03T23:59:59.999999999999Z"
+    path = bundle_file(tmp_path, lambda b: b["journal"][2].update(timestamp=exact))
+    complete = import_mission(path)
+    assert complete["post_import"]["cutoffs"] == complete["post_import"]["latest_stored_cutoffs"]
+    report = import_mission(path, until_day=3)
+    assert report["post_import"]["cutoffs"]["AST-001"] == exact
+    assert report["post_import"]["latest_stored_cutoffs"]["AST-001"] == "2026-11-07T12:00:00Z"

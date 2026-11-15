@@ -193,20 +193,27 @@ def import_mission(path: Path, *, readings: str | None = None, journal: str | No
                 pass
             stats = _apply(conn, bundle, until_day, update_journal, locations)
             cutoffs = {}
+            latest_stored_cutoffs = {}
             later = []
             profile_ids = sorted({a.astronaut_id for a in bundle.astronauts} |
                                  {r.astronaut_id for r in (*bundle.readings, *bundle.journal)})
             for profile_id in profile_ids:
                 records = repo.list_readings(conn, profile_id) + repo.list_journal(conn, profile_id)
-                cutoffs[profile_id] = max((r.timestamp for r in records), key=parse_timestamp, default=None)
+                latest_stored_cutoffs[profile_id] = max((r.timestamp for r in records), key=parse_timestamp, default=None)
+                visible = [r for r in records if until_day is None or r.mission_day <= until_day]
+                cutoffs[profile_id] = max((r.timestamp for r in visible), key=parse_timestamp, default=None)
                 if until_day and any(r.mission_day > until_day for r in records):
                     later.append(profile_id)
             days = [r.mission_day for r in (*bundle.readings, *bundle.journal) if until_day is None or r.mission_day <= until_day]
     # Confirmed import event for a future #14/#15 caller. No callback is run:
-    # consumers can reevaluate affected profiles at cutoffs after this commit.
+    # consumers can reevaluate the selected replay view at cutoffs after commit.
+    # Later stored data stays intact and is reported separately; it must not
+    # leak into a historical analysis through this handoff.
     return dict(committed=True, input=str(path), destination=str(database_path().resolve()),
                 schema_version=bundle.schema_version, format="csv" if readings is not None else "json",
                 requested_day=until_day, selected_day_range=[min(days), max(days)] if days else None,
                 records=stats, rejected=0, profiles_with_later_data=later,
-                warning="Later observations remain stored; use as_of, or reset offline for a clean demo." if later else None,
-                post_import=dict(profiles=list(cutoffs), cutoffs=cutoffs, evaluation_status="not_implemented"))
+                warning="Later observations remain stored; use post_import.cutoffs as as_of for this replay view." if later else None,
+                post_import=dict(profiles=list(cutoffs), cutoffs=cutoffs,
+                                 latest_stored_cutoffs=latest_stored_cutoffs,
+                                 evaluation_status="not_implemented"))

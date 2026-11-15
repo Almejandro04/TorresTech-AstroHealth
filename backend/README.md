@@ -490,10 +490,14 @@ the attempt; model validation can report several fields together.
 
 Only synthetic provenance is accepted; terrestrial_biomedical belongs to the
 separate DATA-03 workflow. Schema validity is not clinical normality.
-After COMMIT, `post_import` supplies declared profiles and actual persisted
-cutoffs as the small handoff point for future #14/#15 reevaluation. No callback
-or engine is run; evaluation_status remains not_implemented, independently of
-confirmed import. No fabricated alerts or baseline changes are introduced.
+After COMMIT, `post_import.cutoffs` supplies per-profile observation cutoffs
+inside the requested replay day, ready to pass as API `as_of` for future #14/#15
+reevaluation. `post_import.latest_stored_cutoffs` separately identifies the latest
+observations physically stored. When replaying day 3 after day 5, the former
+excludes days 4–5; the latter still reports day 5. No rows are deleted, and an
+unfiltered API request still sees the latest stored data. An empty profile has
+a null cutoff. No callback or engine is run; evaluation_status remains
+not_implemented. No fabricated alerts or baseline changes are introduced.
 
 Implementation checked with seven-day CORE-01 fixtures. Final validation with
 Ismael's DATA-04 dataset is pending; these files are not DATA-04. The #8 pending
@@ -550,8 +554,11 @@ código distinto de cero sin atribuir creaciones que terminaron en rollback.
 
 El límite por día usa mission_day validado mediante fechas UTC: incluye TODAS
 las fracciones del último segundo del día y excluye el siguiente. Retroceder
-no borra nada: el informe advierte si ya hay observaciones posteriores y muestra
-el cutoff real. Para consultar historia usa `as_of`, como en el ejemplo HTTP.
+no borra nada: el informe advierte si ya hay observaciones posteriores.
+`post_import.cutoffs` limita la vista al día pedido; pasa ese valor como `as_of`
+a la API. `post_import.latest_stored_cutoffs` informa por separado del último
+dato almacenado. Una consulta sin `as_of` sigue mostrando el último día real
+de la base. Los perfiles vacíos conservan cutoff null.
 Para una demo limpia usa una ruta nueva + init; reset requiere todos los
 clientes detenidos y carga la semilla COMPLETA de siete días. No es un inicio
 vacío de replay. Se conservan sus protecciones de identidad, enlaces y auxiliares.
@@ -559,7 +566,7 @@ vacío de replay. Se conservan sus protecciones de identidad, enlaces y auxiliar
 Solo se admite synthetic; terrestrial_biomedical corresponde a DATA-03.
 No hay generación de una misión de 30 días, reloj global, scheduler, rutas
 nuevas, baselines ni reglas de alertas. Tras el COMMIT, `post_import` entrega
-perfiles y cutoffs persistidos para conectar #14/#15 posteriormente; no ejecuta
+perfiles y cutoffs de la vista seleccionada para conectar #14/#15; no ejecuta
 un hook vacío ni declara análisis realizado. La API conserva not_implemented.
 
 Implementación comprobada con fixtures CORE-01 de 7 días.
