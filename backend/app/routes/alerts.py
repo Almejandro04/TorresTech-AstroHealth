@@ -26,7 +26,7 @@ router = APIRouter(prefix="/api/astronauts/{astronaut_id}/alerts", tags=["alerts
 @router.get(
     "",
     response_model=AlertListResponse,
-    responses=documented(("alerts_not_implemented_is_not_an_all_clear",)),
+    responses=documented(("explainable_synthetic_alert",)),
 )
 def list_alerts(
     astronaut_id: AstronautId,
@@ -41,8 +41,8 @@ def list_alerts(
 ) -> AlertListResponse:
     """Alerts newest first. Check `meta.evaluation_status` before reading `data`.
 
-    While the status is `not_implemented` the list is empty because nothing
-    was evaluated, not because no alert applies.
+    While the status is `insufficient_data` the list is empty because the
+    rule could not be evaluated, not because no alert applies.
     """
     with database() as conn:
         astronaut = repository.require_astronaut(conn, astronaut_id)

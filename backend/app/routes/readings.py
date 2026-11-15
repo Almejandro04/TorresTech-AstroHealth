@@ -20,7 +20,7 @@ from app.routes.common import (
     request_examples,
 )
 from app.routes.errors import ReadingConflictError
-from app.services import views
+from app.services import alert_engine, views
 
 router = APIRouter(prefix="/api/astronauts/{astronaut_id}/readings", tags=["readings"])
 
@@ -90,6 +90,7 @@ def create_reading(
         if result.status == "conflict":
             raise ReadingConflictError
         astronaut = repository.require_astronaut(conn, astronaut_id)
+        alert_engine.evaluate_and_store(conn, astronaut)
         cutoff = views.resolve_as_of(conn, astronaut, None)
     if result.status == "created":
         response.status_code = 201

@@ -171,7 +171,8 @@ def test_cli_reports_failure_without_created_counts(tmp_path, capsys):
     path=bundle_file(tmp_path)
     assert main(['import-json', str(path), '--until-day','3'])==0
     report=json.loads(capsys.readouterr().out)
-    assert report['committed'] and report['post_import']['evaluation_status']=='not_implemented'
+    # Day-3 replay view: the heart-rate baseline window is still open.
+    assert report['committed'] and report['post_import']['evaluation_status']['AST-001']=='insufficient_data'
     before=snapshot()
     bundle_file(tmp_path, lambda b:b['journal'][-1].update(mood_score=99))
     assert main(['import-json', str(path)])==1

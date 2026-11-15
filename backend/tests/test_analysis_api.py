@@ -37,7 +37,7 @@ SEED_BASELINES = {
         ("sleep_hours_last_night", 7.5, None, "08"),
     )
 }
-PENDING_ALERTS = {"evaluation_status": "not_implemented", "active_count": None, "highest_severity": None, "recent": []}
+NOT_EVALUATED = {"evaluation_status": "insufficient_data", "active_count": None, "highest_severity": None, "recent": []}
 
 
 @pytest.fixture
@@ -79,7 +79,7 @@ def test_profile_without_data_matches_the_fixture_baselines(client: TestClient) 
     assert body["data"]["baselines"] == fixture_baselines("summary_profile_without_observations")
     assert body["data"]["baselines"]["heart_rate_bpm"] == insufficient(0, "rest")
     assert body["data"]["baselines"]["sleep_hours_last_night"] == insufficient(0, None)
-    assert body["data"]["alert_summary"] == PENDING_ALERTS
+    assert body["data"]["alert_summary"] == NOT_EVALUATED
 
 
 def test_early_cutoff_reports_insufficient_data_with_real_counts(client: TestClient) -> None:
@@ -99,14 +99,14 @@ def test_reference_becomes_available_when_day_6_starts(client: TestClient) -> No
     assert baselines(client) == SEED_BASELINES
 
 
-def test_summary_has_baselines_and_alerts_are_still_pending(client: TestClient) -> None:
+def test_summary_has_baselines_and_evaluated_alerts(client: TestClient) -> None:
     body = summary(client)
     data = body["data"]
 
     assert data["baselines"] == SEED_BASELINES
-    assert data["alert_summary"] == PENDING_ALERTS
+    assert data["alert_summary"]["evaluation_status"] == "available"
     alerts = client.get(f"{AST}/alerts").json()
-    assert alerts["data"] == [] and alerts["meta"]["evaluation_status"] == "not_implemented"
+    assert len(alerts["data"]) == 1 and alerts["meta"]["evaluation_status"] == "available"
     # Baselines do not touch the per-indicator snapshots or the raw history.
     assert data["latest_metrics"]["respiratory_rate_bpm"]["mission_day"] == 6
     assert data["latest_reading"]["respiratory_rate_bpm"] is None
