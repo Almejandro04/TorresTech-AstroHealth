@@ -1,51 +1,76 @@
 # AstroHealth demonstration runbook
 
-## Scope and reproducibility
+## Scope
 
-There are two explicit rehearsals: the **frontend mock demonstration** below, and **real persisted API monitoring** using the seven-day contract seed. FastAPI/SQLite transport, staged replay and journal persistence pass the isolated smoke. The current API browser workflow is verified; see the acceptance record. Calculated baselines and generated alerts remain #14/#15; DATA-04 generation remains #6.
+- **Main demo:** the 30-day synthetic mission (`SYN-AH-MISSION-001`, AST-101 and AST-102) in **API mode**, with the real FastAPI/SQLite backend calculating baselines and alerts. The expected values below come from [`data/synthetic/scenario_manifest.json`](../data/synthetic/scenario_manifest.json) and the recorded [#21 results](testing/integration21_results.md).
+- **Plan B:** the frontend **mock demo** with the seven-day contract fixtures, clearly labeled **Synthetic demo**. Its alert is an illustration, not a backend result.
 
-A clean checkout, npm ci and npm run dev in frontend suffice. With no local override the source is mock. If a local API override exists, deliberately set VITE_DATA_SOURCE=mock and restart Vite. The UI must show Synthetic demo. Do not use the HTTP test fixture as evidence that the team's backend is complete.
+Everything shown is synthetic data for fictional astronauts. Baselines and the alert rule are experimental; nothing here is a diagnosis.
 
-## Reset / preflight
+## Reset / rehearsal checklist (before presenting)
 
-1. Run npm run check and npm run build in frontend.
-2. Start Vite on an unoccupied loopback port. Open /#/dashboard; choose Demo Astronaut 1 / AST-001.
-3. Reload to reset session journal data and switches. Confirm seven observed days and 30 planned days.
-4. Open Synthetic demo and leave Contract fixtures / Normal / Succeeds selected. Presentation samples are optional extra layout examples, not generated scientific findings.
-5. Keep a copy of docs/examples/mission_seed.json and api_examples.json available. The committed Flight Log captures are an illustration if browser presentation fails, not proof of a running backend.
+1. New disposable database, in the backend terminal from the repository root:
 
-## Approximately two-minute presentation
+   ```powershell
+   $env:ASTROHEALTH_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
+   $env:ASTROHEALTH_DB_PATH = Join-Path $env:TEMP ("astrohealth-demo-" + [guid]::NewGuid().ToString("N") + ".db")
+   cd backend
+   ..\.venv\Scripts\python.exe -m app.database import-json ..\docs\examples\mission_seed.json --until-day 7
+   ..\.venv\Scripts\python.exe -m app.database import-json ..\data\synthetic\mission_ast101_ast102.json --until-day 30
+   ```
 
-| Step | Action | Explain |
+2. From the repository root, both green (each uses its own temporary database):
+
+   ```powershell
+   .\.venv\Scripts\python.exe scripts\check_local_integration.py
+   .\.venv\Scripts\python.exe scripts\validate_mission_rules.py
+   ```
+
+3. Start the API: `..\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8000` (from `backend`, same terminal and database path). Check http://127.0.0.1:8000/api/health.
+4. `frontend/.env.local` contains `VITE_DATA_SOURCE=api`, `VITE_API_BASE_URL=http://localhost:8000`, `VITE_JOURNAL_SOURCE_ID=SYN-AH-MISSION-001`, `VITE_JOURNAL_TIME_UTC=08:00:00`. Start Vite (`npm run dev` in `frontend`).
+5. Browser on http://127.0.0.1:5173/#/dashboard, profile **AST-101**, latest view. The mission bar shows **API · synthetic mission data**.
+6. Choose the theme (light is the default) and a readable zoom for the room.
+7. Plan B ready: a second checkout or terminal able to run the mock demo (below).
+
+## Presentation script (~2–3 minutes)
+
+| Step | Action | What to say |
 | --- | --- | --- |
-| 1 — identity | Dashboard; point to fictional astronaut, mission day and Synthetic demo | This is an educational monitoring prototype with synthetic observations. |
-| 2 — reference | Choose Mission view Day 5 | Days 1–5 are the fixture's reference period. The experimental fixture evaluation has no active alert at this cutoff. This does not prove good health. |
-| 3 — introduced change | Return to latest Day 7 | The latest resting heart rate is 84 beats/min, oxygen 97%, sleep 5.5 hours and mood 2/5. Respiratory rate retains its Day 6 observation because Day 7 is null. |
-| 4 — history | Open Analytics; choose 3 days | Dates, units and references stay explicit. Respiratory data has a gap on Day 7. Show the data table for an accessible equivalent. |
-| 5 — explanation | Open Alerts and the shared warning | Fixture days 6–7 have a resting mean of 81 versus reference 72. Read the explanation, evidence window and rule/source; do not describe this as a clinical threshold or diagnosis. |
-| 6 — user control | Journal; edit a note; Cancel, then save a changed note | Cancel restores the previous entry. A confirmed mock save preserves its daily ID and lasts only for this page session. |
+| 1 — identity | Dashboard, AST-101; point to the mission bar | A fictional astronaut on a 30-day synthetic mission. The bar says **API · synthetic mission data**: every value comes from the backend and keeps its time, context and source. |
+| 2 — reference | Mission view **Day 5**, then **Day 6–8** | Day 5: **More observations needed** — the reference window (days 1–5) has not ended, so nothing is compared and this is not an all-clear. From day 6: an individual reference of about 72 beats/min (72.2), from 5 resting observations only. |
+| 3 — isolated spike | Mission view **Day 9** | Resting heart rate is high on day 9 (84) but there is no alert: the experimental rule needs two consecutive days at or above reference + 5. |
+| 4 — missing data | Mission view **Days 12–14**; Analytics | Day 12 has no resting heart rate, day 13 no resting respiratory rate, day 14 no journal entry. Charts show gaps and "Not recorded", never 0. A card may show the latest non-null value from another context (for example the day-12 exercise heart rate) with that context visible. |
+| 5 — introduced change | Mission view **Day 19**; Alerts | A **warning** from `DEMO-HR-CHANGE` version `fixture-1`: window days 18–19, observed 80 versus reference 72.2. Read the explanation. The +5 beats/min / two-day rule is a simulation assumption, not a clinical threshold. |
+| 6 — resolution | Mission view **Day 22** | Day 22 is back below the threshold, so the same alert is **resolved**. Earlier days still show it as it was then. |
+| 7 — insufficient history | Profile **AST-102** | Only three days of data: **More observations needed**. The system never presents missing analysis as "no alerts". |
+| 8 — optional journal | Journal, AST-101; save a note | A saved entry is stored in SQLite; the summary and sleep history refresh from the API. |
 
-For a shorter demo, omit the journal step. It is P1 and does not block the core reference/change/alert demonstration.
+Closing (honest): "The reference is a fixed-window mean of days 1–5 at rest, and the alert is one experimental rule. All data is synthetic, generated reproducibly; terrestrial PhysioNet data is processed separately and never shown as an astronaut. This is a monitoring prototype, not a diagnostic tool, and it is not endorsed by NASA."
+
+## Likely questions
+
+| Question | Short answer |
+| --- | --- |
+| Is the data real? | No. Astronauts and the mission are synthetic ([data/synthetic/README.md](../data/synthetic/README.md)). A small terrestrial ICU subset (PhysioNet BIDMC, ODC-By) is processed separately and never enters the astronaut views ([data_sources.md](data_sources.md)). |
+| Why +5 beats/min? | It is a simulation assumption for the demo; no cited source supports it as a threshold ([validation_review.md](research/validation_review.md), [alert_rules.md](architecture/alert_rules.md)). |
+| What happens without data? | The status is `insufficient_data` ("More observations needed"), never an empty "no alerts" result. |
+| How do you avoid inventing values? | Nulls stay null, absent entries stay absent, contexts are never mixed, mood is never averaged, and every value keeps its own timestamp and source ([analysis.md](architecture/analysis.md)). |
+| How is it reproduced? | Seed 2026 regenerates byte-identical files; `validate_mission_rules.py` and `check_local_integration.py` check the scenario over the real backend ([integration21_results.md](testing/integration21_results.md)). |
 
 ## Failure / empty-state rehearsal
 
-- Day 3: insufficient history, no misleading all-clear.
-- AST-002: no observations, not zero-valued health.
-- Day 7 respiratory history: null remains a chart gap despite a retained earlier dashboard snapshot.
-- Demo scenarios -> Analysis not implemented: unavailable analysis differs from evaluated no alerts.
-- Demo scenarios -> Requests fail: display failure and recovery, not a silent switch of data source.
-- Next journal save -> Rejected field / Connection failure / Unconfirmed: preserve input, explain uncertainty and retry. Settings apply once. Reset with Reload or Restore seed data.
-- Navigate away from a dirty journal: Keep editing preserves input; Discard changes is explicit.
+- **API stopped:** stop uvicorn; the views show an error state with **Try again**, never bundled fixtures. Restart uvicorn with the same database path and retry.
+- **AST-102:** short history, `insufficient_data` / "More observations needed".
+- **Null values:** days 12–13 stay chart gaps even when a card shows an earlier or other-context value with its own time.
+- **Journal failures:** a rejected or unconfirmed save keeps the draft and explains the uncertainty.
 
-## Real API rehearsal — monitoring and persistence
+## Plan B — mock demo
 
-1. Follow the root README setup. Use a NEW disposable database, exact CORS origins and the existing import CLI; keep the absolute database path available to both terminals.
-2. Run the automatic smoke first from the repository root: `.\.venv\Scripts\python.exe scripts\check_local_integration.py`. It creates its own independent database/server; passing it does not seed the interactive database.
-3. In the interactive backend terminal, import the CORE-01 seed through day 3 and start FastAPI. Enable API mode in the frontend, with the configured API base URL and explicit journal manifest/time. Restart Vite. The mission bar must identify API synthetic data.
-4. Confirm AST-001/day 3 against the API summary. AST-002 must remain an empty profile. Analysis and alert evaluation must show unavailable, not evaluated-no-alerts or a healthy result.
-5. In another backend terminal configured with the SAME absolute database path, import through day 5, then choose Refresh data in Flight Log. Verify the new latest day and chart/table observations without losing the selected profile/range. Import through day 7 to show the missing respiratory value and retained earlier dashboard timestamp.
-6. For historical replay, select day 3 in Flight Log. For direct API consumers, pass the import report's `post_import.cutoffs[astronaut_id]` as `as_of`; `latest_stored_cutoffs` reports physical storage separately. Importing backwards does not delete future rows or set a global API clock.
-7. Create/correct a daily Journal entry with the imported source and effective time. Compare its stable ID, summary and sleep history. Restart FastAPI using the same database, reload and verify persistence. A mock save is session-only; an API save is stored in SQLite.
-8. Stop/restart the API and test visible errors/retry, then keyboard and actual 200% zoom. Repeat these browser actions for future changes; the current API review is recorded separately from the CLI. Actual 200% zoom and broader assistive/cross-browser checks remain pending.
+In `frontend`, remove or rename `.env.local` (or set `VITE_DATA_SOURCE=mock`), then `npm ci` if needed and `npm run dev`. The mission bar shows **Synthetic demo**; the data is the seven-day contract fixtures (AST-001, AST-002), not the 30-day mission.
 
-The current transport/persistence and rendered API/Journal subset is verified in [browser acceptance](testing/browser13_acceptance.md); the supported R1 restart recheck passed. The full DATA-04/actual-engine rehearsal remains #21/#22. Use the explicitly labeled mock fallback for the illustrative baseline/alert explanation until #14/#15 are integrated. Never present the mock warning as a generated API alert.
+1. Dashboard, AST-001. Reload resets session journal data and demo switches (or use **Restore seed data**).
+2. Mission view Day 5, then Day 7: on Day 7 the resting heart rate is 84, oxygen 97%, sleep 5.5 h and mood 2; respiratory rate keeps its Day 6 value because Day 7 is null.
+3. Alerts: the fixture warning (days 6–7 mean 81 versus reference 72). **Say clearly that this alert is an illustrative contract fixture, not one generated by the backend.**
+4. Demo scenarios: "Analysis not implemented" differs from evaluated-no-alerts; "Requests fail" shows the error and **Try again**.
+
+The committed Flight Log captures ([redesign rationale](design/redesign_rationale.md)) are an illustration if the browser fails, not proof of a running backend.
