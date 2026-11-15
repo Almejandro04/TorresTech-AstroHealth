@@ -1,29 +1,29 @@
-"""AstroHealth API entry point (BACKEND-01).
+"""AstroHealth API entry point.
 
-Only service initialization and the health endpoint live here. The response
-shapes follow docs/api_contract.md v0.1.0.
+Builds the FastAPI app: CORS, error envelopes, the health endpoint, and the
+astronaut routes. The response shapes follow docs/api_contract.md v0.1.0.
 """
 
 import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager, closing
 from typing import Literal
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from app.config import SCHEMA_VERSION, SchemaVersion
+from app.config import SCHEMA_VERSION
+from app.database import connect, init_schema
+from app.models.responses import ResponseMeta, meta
+from app.routes import ROUTERS
+from app.routes.errors import install_error_handling
+from app.routes.common import preserve_openapi_example_nulls
 
 SERVICE_NAME = "astrohealth-api"
 
 CORS_ORIGINS_ENV = "ASTROHEALTH_CORS_ORIGINS"
 DEFAULT_CORS_ORIGINS = "http://localhost:5173"
-
-
-class ResponseMeta(BaseModel):
-    """Metadata present in every response envelope."""
-
-    schema_version: SchemaVersion
-    as_of: str | None
 
 
 class HealthData(BaseModel):
@@ -55,9 +55,19 @@ def cors_origins_from_env() -> list[str]:
     return parse_cors_origins(raw if raw.strip() else DEFAULT_CORS_ORIGINS)
 
 
-def create_app() -> FastAPI:
-    app = FastAPI(title="AstroHealth API", version=SCHEMA_VERSION)
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Create missing tables at startup. Never seeds or deletes data."""
+    with closing(connect()) as conn:
+        init_schema(conn)
+    yield
 
+
+def create_app() -> FastAPI:
+    app = FastAPI(title="AstroHealth API", version=SCHEMA_VERSION, lifespan=lifespan)
+
+    # Middleware added later wraps the earlier ones, so CORS is outermost.
+    install_error_handling(app)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cors_origins_from_env(),
@@ -69,9 +79,13 @@ def create_app() -> FastAPI:
     def get_health() -> HealthResponse:
         """Report that the API process is running."""
         return HealthResponse(
-            data=HealthData(status="ok", service=SERVICE_NAME),
-            meta=ResponseMeta(schema_version=SCHEMA_VERSION, as_of=None),
+            data=HealthData(status="ok", service=SERVICE_NAME), meta=meta()
         )
+
+    for router in ROUTERS:
+        app.include_router(router)
+
+    preserve_openapi_example_nulls(app, ROUTERS)
 
     return app
 
