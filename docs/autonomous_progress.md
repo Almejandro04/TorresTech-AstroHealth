@@ -6,6 +6,12 @@ Work requested by Jorge: #10, #11, #12, #17, #13, #22 and available portions of 
 
 No backend implementation, scientific rules, raw data or teammate worktree is changed. Main is checked again before integration. The owner's collaboration preference permits direct integration after verification.
 
+## Integration result
+
+Implementation commit [9b25de1](https://github.com/Almejandro04/TorresTech-AstroHealth/commit/9b25de11500274a0e2be9fd481245196f20f39ff) is integrated in main by guarded fast-forward, after a fresh main check. The own task branch is retained.
+
+Closed as completed: [#10](https://github.com/Almejandro04/TorresTech-AstroHealth/issues/10), [#11](https://github.com/Almejandro04/TorresTech-AstroHealth/issues/11), [#12](https://github.com/Almejandro04/TorresTech-AstroHealth/issues/12). #13/#17/#21/#22 remain open with updated checklists and concrete blockers. Assignments and teammate branches are preserved.
+
 ## Delivered
 
 - Real typed Fetch adapter for health, profiles, readings, journal history, summary, alerts and journal upsert.
@@ -36,7 +42,7 @@ Production JavaScript is about 787 kB / 236 kB gzip. Vite's advisory 500 kB chun
 
 ## Issue disposition
 
-- #10 / #11 / #12: prototype/mock functional acceptance is supported by the existing rendered review, shared fixtures, added data edge cases and chart component render checks. They can be closed once this verified work is integrated.
+- #10 / #11 / #12: prototype/mock functional acceptance is supported by the existing rendered review, shared fixtures, added data edge cases and chart component render checks. They are closed as completed after verified integration.
 - #13: transport/configuration is delivered, but actual imported mission endpoints are absent in main. Keep open.
 - #17: mock form and HTTP upsert are delivered, but real persisted create/correct/history refresh is not verified. Keep open.
 - #22: README and rehearsal/fallback outline are delivered; the final integrated demo rehearsal depends on #21. Keep open.

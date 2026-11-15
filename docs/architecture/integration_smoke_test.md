@@ -52,3 +52,17 @@ There is currently no verified generation/import/SQLite-reset/replay CLI in main
 ## Current blockers
 
 #6 synthetic generation, #7 storage, #8 mission API, #9 ingestion/replay, #14 analysis and #15 alert engine are not delivered in the reviewed main baseline. Do not close #13, #17 or #21 on transport-only evidence. Final end-to-end demo rehearsal in #22 remains pending.
+
+## R1 — API review reload became blank
+
+| Field | Recorded observation |
+| --- | --- |
+| Source / revision | Shared seed through the explicitly test-only HTTP fixture; implementation now in 9b25de1 |
+| Setup | Start `node scripts/serve-fixture-api.mjs` from frontend and use its printed URL as `VITE_API_BASE_URL` in ignored `.env.api-review`; set `VITE_DATA_SOURCE=api`. Run mock on `npm run dev -- --port 5175` and API on `npm run dev -- --mode api-review --port 5176`. |
+| Steps observed | API Dashboard initially displayed fixture values. Open `/#/journal?entry=8`: missing metadata correctly disabled create. Add `VITE_JOURNAL_SOURCE_ID=SYN-CORE-001` and `VITE_JOURNAL_TIME_UTC=08:00:00`, restart API dev server and reload that tab while the mock server is running. |
+| Expected / actual | Expected configured Journal form; actual blank root after reload, document loaded, no captured browser console error. |
+| Component / owner / issue | Frontend / Jorge / #13; blocks completion of the new API browser review, not proof that production has the same failure. |
+| Candidate correction / limits | Separate Vite dependency cache by mode. API config/source-selection probe and both production builds pass. This has not been rendered-retested, so R1 remains open. |
+| Retest | Repeat Dashboard, configured create/correct, rejected/uncertain write, retry and API-stop/restart flows in a browser once URL verification is available. Windows Computer Use stopped because the browser URL could not be verified confidently. No automated UI workaround was attempted. |
+
+Do not expose the fixture server outside loopback or present it as the FastAPI mission backend. Test environment files are local-only and not committed.
