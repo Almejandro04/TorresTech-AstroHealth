@@ -18,8 +18,13 @@ FastAPI service for the AstroHealth MVP. Response shapes follow
   independent latest metric snapshots, observation cutoffs and normalized errors.
 
 BACKEND-06 (#9) adds local JSON/CSV ingestion and staged insertion by mission day.
-Not implemented: calculated baselines/trends (#14),
-alert evaluation/rules (#15), authentication or deployment. Startup initializes
+
+- BACKEND-04 (#14): experimental reference baselines in `summary.baselines`,
+  plus internal descriptive statistics and daily trends
+  (`app/services/analysis.py`). See "Baselines and trend analysis" below.
+
+Not implemented: HTTP exposure of trends and statistics (needs a contract
+agreement), alert evaluation/rules (#15), authentication or deployment. Startup initializes
 missing tables without seeding, resetting or deleting existing data. Each
 request opens/closes its own SQLite connection with foreign keys enabled.
 
@@ -168,10 +173,49 @@ All successes use `data/meta`; all errors use `error/meta`, with
 Health/profiles use `meta.as_of=null`. POST responses use the effective latest
 observation cutoff, so their data passes the frontend's `matchesView` guard.
 
-Baselines use `not_implemented`, null values/context/method/windows and zero
-samples until #14. Alerts use `not_implemented`, `data=[]`, `total=0`;
+Baselines are calculated (#14): `available` or `insufficient_data`, never
+`not_implemented`. Alerts use `not_implemented`, `data=[]`, `total=0`;
 summary active count/severity are null and recent alerts empty until #15.
 An empty unevaluated alert list is not an all-clear.
+
+#### Baselines and trend analysis (#14)
+
+Formulas, worked examples and limits are in
+[`docs/architecture/analysis.md`](../docs/architecture/analysis.md). These are
+experimental demonstration statistics under a provisional policy that the team
+has not yet reviewed. They are not a diagnosis or a validated clinical model.
+
+- Reference = arithmetic mean of the non-null values of mission days 1-5, for
+  heart rate, SpO2 and respiratory rate (`rest` readings only) and for sleep
+  hours (daily journal). Mood is ordinal and has no reference.
+- It is `available` once the cutoff reaches mission day 6 and the window has at
+  least 5 observations on 5 distinct days. Otherwise it is `insufficient_data`
+  with `sample_count` = valid observations in the window so far, and null
+  value, window and method. Later days never change or widen the reference.
+- When available: `reference_start`/`reference_end` are the first and last
+  observations used, and `method` is `experimental_fixed_window_mean_v1`.
+- The observation cutoff is applied before any calculation, and nothing is
+  cached, so a past `as_of` gives the same result after later writes. A journal
+  correction does change that day's analysis: `as_of` is not a version history.
+- Descriptive statistics (count, mean, min, max, population standard
+  deviation) and daily trends (daily mean, delta and percent change against the
+  reference) exist as internal functions only. They have no HTTP fields yet.
+
+Check it with the seed (`AST-001`, days 1-5 hold 72 beats/min, 98 %,
+16 breaths/min and 7.5 h), against the disposable demo server below:
+
+```powershell
+(Invoke-RestMethod "http://127.0.0.1:8001/api/astronauts/AST-001/summary?as_of=2026-11-05T23:59:59Z").data.baselines.heart_rate_bpm
+(Invoke-RestMethod "http://127.0.0.1:8001/api/astronauts/AST-001/summary?as_of=2026-11-06T00:00:00Z").data.baselines.heart_rate_bpm
+```
+
+The first is `insufficient_data` with 5 samples; the second is `available` with
+value 72. Hand-calculated cases are in `tests/test_analysis.py` and
+`tests/test_analysis_api.py`.
+
+Still pending: alert rules and evaluation (#15); the 30-day demonstration
+dataset (DATA-04), which is not needed by these calculations; and agreeing with
+the frontend how trends are exposed before any HTTP field is added.
 
 Disposable demo from `backend` (stop this demo server before another reset):
 
@@ -204,12 +248,21 @@ loads the unchanged frontend client/guards in memory and performs synthetic
 writes; use a freshly seeded disposable database only. This is transport and
 persistence evidence, not a browser/UI test.
 
-Known fixture discrepancy: `summary_before_analysis_is_implemented` gives
-`measurement_context="rest"` for pending vital baselines. The #8 brief requires
-all pending baseline contexts null. This API follows that brief; tests and
-OpenAPI examples explicitly account for these three fields. Shared fixtures
-and the contract remain unchanged. Six strict xfails cover only #14/#15 analysis
-examples; their non-analysis fields are tested separately.
+Known differences from the shared fixtures (contract and fixtures unchanged):
+
+- `summary_before_analysis_is_implemented` shows the stage before #14, with
+  `not_implemented` baselines. The API now calculates them; every other field
+  of that case is still compared, and the OpenAPI example shows the real values.
+- `summary_normal_reference_fixture` (cutoff `2026-11-05T23:59:59Z`) shows
+  `available` baselines. The provisional policy waits for mission day 6, so the
+  API returns `insufficient_data` with the same 5 samples one second earlier.
+- Available fixture baselines use the window's calendar bounds
+  (`00:00:00Z`-`23:59:59Z`) and `method="fixture_reference_mean"`. The API
+  returns the first and last observation used and its own method name. Status,
+  value, sample count and context match.
+
+Six strict xfails remain and all depend only on the alert evaluation (#15).
+Their baselines and other fields are tested separately.
 
 ## Español
 
@@ -223,8 +276,13 @@ examples; their non-analysis fields are tested separately.
   cortes de observación y errores normalizados.
 
 BACKEND-06 (#9) añade importación local JSON/CSV e inserción por día de misión.
-Sin implementar: cálculo de baselines/tendencias
-(#14), reglas/evaluación de alertas (#15), autenticación y despliegue. El arranque
+
+- BACKEND-04 (#14): referencias experimentales en `summary.baselines`, además
+  de estadística descriptiva y tendencias diarias internas
+  (`app/services/analysis.py`). Consulta "Referencias y análisis de tendencia".
+
+Sin implementar: exposición HTTP de tendencias y estadísticas (requiere acuerdo
+de contrato), reglas/evaluación de alertas (#15), autenticación y despliegue. El arranque
 crea tablas faltantes sin sembrar, reiniciar ni borrar datos. Cada petición abre
 y cierra su conexión SQLite con claves foráneas activadas.
 
@@ -371,10 +429,52 @@ inexistentes; 404 `NOT_FOUND` para rutas inexistentes; 405 `METHOD_NOT_ALLOWED`;
 Los POST usan el corte efectivo de la última observación, compatible con
 `matchesView` del cliente. Un error nunca se convierte en historia vacía.
 
-Hasta #14, los baselines usan `not_implemented`, valor/contexto/método/ventanas
-null y cero muestras. Hasta #15, las alertas usan `not_implemented`, colección
+Los baselines se calculan (#14): `available` o `insufficient_data`, nunca
+`not_implemented`. Hasta #15, las alertas usan `not_implemented`, colección
 vacía y total cero; el summary mantiene conteo/severidad null y alertas recientes
 vacías. Eso expresa evaluación pendiente, no ausencia comprobada de alertas.
+
+#### Referencias y análisis de tendencia (#14)
+
+Las fórmulas, los ejemplos resueltos y los límites están en
+[`docs/architecture/analysis.md`](../docs/architecture/analysis.md). Son
+estadísticas experimentales de demostración bajo una política provisional que
+el equipo aún no ha revisado. No son un diagnóstico ni un modelo clínico validado.
+
+- Referencia = media aritmética de los valores no nulos de los días de misión
+  1-5, para frecuencia cardíaca, SpO2 y frecuencia respiratoria (solo lecturas
+  `rest`) y para horas de sueño (diario). El ánimo es ordinal y no tiene referencia.
+- Pasa a `available` cuando el corte llega al día de misión 6 y la ventana tiene
+  al menos 5 observaciones en 5 días distintos. Si no, es `insufficient_data`,
+  con `sample_count` = observaciones válidas de la ventana hasta ese momento, y
+  valor, ventana y método null. Los días posteriores no cambian ni amplían la
+  referencia.
+- Cuando está disponible: `reference_start`/`reference_end` son la primera y la
+  última observación usadas, y `method` es `experimental_fixed_window_mean_v1`.
+- El corte de observación se aplica antes de cualquier cálculo y no hay caché,
+  así que un `as_of` pasado da el mismo resultado tras escrituras posteriores.
+  Una corrección del diario sí cambia el análisis de ese día: `as_of` no es un
+  historial de versiones.
+- La estadística descriptiva (cantidad, media, mínimo, máximo, desviación
+  estándar poblacional) y las tendencias diarias (media diaria, delta y cambio
+  porcentual frente a la referencia) existen solo como funciones internas. Aún
+  no tienen campos HTTP.
+
+Para comprobarlo con la semilla (`AST-001`, días 1-5 con 72 beats/min, 98 %,
+16 breaths/min y 7.5 h), contra el servidor de demo desechable de abajo:
+
+```powershell
+(Invoke-RestMethod "http://127.0.0.1:8001/api/astronauts/AST-001/summary?as_of=2026-11-05T23:59:59Z").data.baselines.heart_rate_bpm
+(Invoke-RestMethod "http://127.0.0.1:8001/api/astronauts/AST-001/summary?as_of=2026-11-06T00:00:00Z").data.baselines.heart_rate_bpm
+```
+
+La primera es `insufficient_data` con 5 muestras; la segunda es `available` con
+valor 72. Los casos calculados a mano están en `tests/test_analysis.py` y
+`tests/test_analysis_api.py`.
+
+Sigue pendiente: reglas y evaluación de alertas (#15); el conjunto de
+demostración de 30 días (DATA-04), que estos cálculos no necesitan; y acordar
+con el frontend cómo se exponen las tendencias antes de añadir campos HTTP.
 
 Demo desechable desde `backend`, sin tocar una base de trabajo:
 
@@ -405,12 +505,23 @@ instalar frontend: `node scripts/check_frontend_api.mjs http://127.0.0.1:8001`.
 Carga el cliente y guards originales en memoria y escribe observaciones
 sintéticas: úsala solo contra una base temporal recién sembrada. No prueba la UI.
 
-Contradicción conocida: el caso `summary_before_analysis_is_implemented` usa
-`measurement_context="rest"` en sus tres baselines vitales pendientes, pero el
-encargo #8 exige null en todos ellos. La API sigue el encargo; las pruebas y los
-ejemplos OpenAPI explicitan esta diferencia de tres campos. No se cambian el
-contrato ni los fixtures compartidos. Los seis xfail estrictos corresponden
-únicamente a análisis #14/#15; sus campos ajenos al análisis se prueban aparte.
+Diferencias conocidas respecto a los fixtures compartidos (contrato y fixtures
+sin cambios):
+
+- `summary_before_analysis_is_implemented` muestra la etapa anterior a #14, con
+  baselines `not_implemented`. La API ahora los calcula; el resto de campos de
+  ese caso se sigue comparando y el ejemplo OpenAPI muestra los valores reales.
+- `summary_normal_reference_fixture` (corte `2026-11-05T23:59:59Z`) muestra
+  baselines `available`. La política provisional espera al día de misión 6, así
+  que la API devuelve `insufficient_data` con las mismas 5 muestras un segundo
+  antes.
+- Los baselines disponibles del fixture usan los límites de calendario de la
+  ventana (`00:00:00Z`-`23:59:59Z`) y `method="fixture_reference_mean"`. La API
+  devuelve la primera y la última observación usadas y su propio nombre de
+  método. Estado, valor, cantidad de muestras y contexto coinciden.
+
+Quedan seis xfail estrictos y todos dependen únicamente de la evaluación de
+alertas (#15). Sus baselines y demás campos se prueban aparte.
 
 ## Local ingestion and staged demo (#9) — English
 

@@ -26,13 +26,22 @@ await check('health and profile envelopes', async () => {
   assert.equal((await api.getHealth()).data.status, 'ok')
   assert.ok((await api.getAstronauts()).data.some(p => p.astronaut_id === 'AST-001'))
 })
-await check('summary snapshots and honest analysis placeholders', async () => {
+await check('summary snapshots, calculated baselines and pending alerts', async () => {
   const { data } = await api.getSummary('AST-001')
   assert.equal(data.latest_metrics.respiratory_rate_bpm.mission_day, 6)
-  for (const baseline of Object.values(data.baselines)) {
-    assert.equal(baseline.status, 'not_implemented')
-    assert.equal(baseline.measurement_context, null)
+  // Seed days 1-5 hold one repeated value per indicator, so each mean is that value.
+  const expected = { heart_rate_bpm: [72, 'rest'], spo2_percent: [98, 'rest'], respiratory_rate_bpm: [16, 'rest'], sleep_hours_last_night: [7.5, null] }
+  for (const [name, [value, context]] of Object.entries(expected)) {
+    const baseline = data.baselines[name]
+    assert.deepEqual([baseline.status, baseline.value, baseline.sample_count, baseline.measurement_context], ['available', value, 5, context])
+    assert.equal(baseline.method, 'experimental_fixed_window_mean_v1')
   }
+  // The guarded client accepts the earlier views too: window still open, then closed.
+  const early = (await api.getSummary('AST-001', { as_of: '2026-11-05T23:59:59Z' })).data.baselines.heart_rate_bpm
+  assert.deepEqual([early.status, early.value, early.sample_count], ['insufficient_data', null, 5])
+  const day6 = (await api.getSummary('AST-001', { as_of: '2026-11-06T00:00:00Z' })).data.baselines.heart_rate_bpm
+  assert.deepEqual([day6.status, day6.value], ['available', 72])
+  assert.equal(data.alert_summary.evaluation_status, 'not_implemented')
   assert.equal(data.alert_summary.active_count, null)
 })
 await check('history, pagination, cutoff and view guards', async () => {

@@ -17,8 +17,8 @@ from conftest import EXAMPLES, journal_body, reading_body
 
 CASES = json.loads((EXAMPLES / "api_examples.json").read_text(encoding="utf-8"))["cases"]
 
-# Fixture cases whose expected body needs calculated baselines (#14) or an
-# alert evaluation (#15). Everything else in them is still compared.
+# Fixture cases whose expected body needs an alert evaluation (#15). Their
+# other fields are compared in separate tests, including baselines (#14).
 ANALYSIS_CASES = {
     "summary_normal_reference_fixture",
     "summary_introduced_change_and_missing_metric",
@@ -89,7 +89,7 @@ def test_all_fixture_cases_are_covered() -> None:
         pytest.param(
             case,
             id=case["name"],
-            marks=[pytest.mark.xfail(strict=True, reason="#14/#15: needs baselines or alert evaluation")]
+            marks=[pytest.mark.xfail(strict=True, reason="#15: needs the alert evaluation")]
             if case["name"] in ANALYSIS_CASES
             else [],
         )
@@ -101,13 +101,15 @@ def test_fixture_case(client: TestClient, case: dict) -> None:
 
     assert response.status_code == case["response"]["status"]
     expected = copy.deepcopy(case["response"]["body"])
+    actual = response.json()
     if case["name"] == "summary_before_analysis_is_implemented":
-        # Explicit discrepancy, not an xfail: the #8 brief requires null here,
-        # while the shared fixture says rest. Compare every other field intact.
-        for name, baseline in expected["data"]["baselines"].items():
-            assert baseline["measurement_context"] == (None if name == "sleep_hours_last_night" else "rest")
-            baseline["measurement_context"] = None
-    assert response.json() == expected
+        # Not an xfail: this fixture shows the stage before #14, so its
+        # baselines are legitimately superseded. Every other field, including
+        # the still-pending alert summary, is compared intact.
+        assert {b["status"] for b in expected["data"]["baselines"].values()} == {"not_implemented"}
+        assert {b["status"] for b in actual["data"]["baselines"].values()} == {"available"}
+        del expected["data"]["baselines"], actual["data"]["baselines"]
+    assert actual == expected
 
 
 @pytest.mark.parametrize(
@@ -349,16 +351,11 @@ def test_summary_metrics_keep_their_own_observation_day(client: TestClient) -> N
     assert metrics["mood_score"]["value"] == 2 and isinstance(metrics["mood_score"]["value"], int)
 
 
-def test_analysis_is_reported_as_not_implemented(client: TestClient) -> None:
+def test_alert_evaluation_is_still_reported_as_not_implemented(client: TestClient) -> None:
     data = client.get(f"{AST}/summary").json()["data"]
 
-    assert set(data["baselines"]) == {
-        "heart_rate_bpm", "spo2_percent", "respiratory_rate_bpm", "sleep_hours_last_night",
-    }
-    for baseline in data["baselines"].values():
-        assert (baseline["status"], baseline["value"], baseline["sample_count"]) == ("not_implemented", None, 0)
-        assert baseline["reference_start"] is baseline["reference_end"] is baseline["method"] is None
-        assert baseline["measurement_context"] is None
+    # Baselines are calculated (#14, see test_analysis_api.py); alerts are not.
+    assert {baseline["status"] for baseline in data["baselines"].values()} == {"available"}
     assert data["alert_summary"] == {
         "evaluation_status": "not_implemented", "active_count": None, "highest_severity": None, "recent": [],
     }
