@@ -64,3 +64,11 @@ Run npm ci, npm run check and npm run build. Start Vite or preview, then visit a
 - [WCAG contrast minimum](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)
 - [NASA brand guidelines](https://www.nasa.gov/nasa-brand-center/brand-guidelines/)
 - [Approved API contract](../api_contract.md) and [UX requirements](../ux_requirements.md)
+
+## Review captures
+
+![Desktop Dashboard, light theme](review-dashboard.jpg)
+
+![Journal mood group at 375px, dark theme](review-journal-mobile.jpg)
+
+The final checkout also passed unknown-route recovery, refresh, the skip link, explicit dirty-form discard and a light-theme mobile Journal check. No browser-console errors were captured during the review.
