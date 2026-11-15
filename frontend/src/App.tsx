@@ -1,5 +1,6 @@
 import { Navigate, RouterProvider, createHashRouter } from 'react-router-dom'
 import { AppShell } from './components/AppShell'
+import { ApplicationError } from './components/ApplicationError'
 import { AlertsPage } from './pages/AlertsPage'
 import { AnalyticsPage } from './pages/AnalyticsPage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -13,6 +14,7 @@ import { NotFoundPage } from './pages/NotFoundPage'
 const router = createHashRouter([
   {
     element: <AppShell />,
+    errorElement: <ApplicationError />,
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: 'dashboard', element: <DashboardPage /> },

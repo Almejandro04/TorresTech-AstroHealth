@@ -8,7 +8,7 @@ Owners: Jorge (@Almejandro04) and Jhonatan (@TheJhonatan144); data support: Isma
 | --- | --- | --- |
 | Mock Flight Log | Shared fixtures and prior desktop/mobile/form review | Passed for the mock scope; #10/#11/#12 closed |
 | Backend models/API/import | Full pytest suite after the replay fix | 307 passed; 6 expected #14/#15 xfails |
-| Frontend Fetch -> real FastAPI/SQLite | Unchanged client probe, seven checks over HTTP | Passed, including journal create/correct/retry and reading conflict |
+| Frontend Fetch -> real FastAPI/SQLite | Unchanged client probe, eight checks over HTTP | Passed, including journal create/correct/retry and reading conflict |
 | Staged ingestion -> API | Day 3 -> 5, repeated import and backward cutoff | Passed with the seven-day CORE-01 seed |
 | Restart persistence | Stored journal correction/zero sleep/stable ID and single reading after server restart | Passed in an isolated database |
 | Actual API browser/form/error flows | R1 and configured-create/failure controls | Pending; no new browser review claimed |
@@ -24,7 +24,7 @@ Install backend development requirements using the root README. From the reposit
 .\.venv\Scripts\python.exe scripts\check_local_integration.py --node "C:\Program Files\nodejs\node.exe"
 ```
 
-The script creates a task-owned temporary database and loopback Uvicorn subprocess on an ephemeral port. It overrides only its child process environment, imports the seed through days 3/5/7, checks idempotence and historical cutoffs, performs an actual CORS preflight, runs the existing seven-check unchanged frontend Fetch probe, and restarts the service to compare persisted journal/readings. Owned processes/files are cleaned up even on failure. It never resets the configured working database or starts a browser.
+The script creates a task-owned temporary database and loopback Uvicorn subprocess on an ephemeral port. It overrides only its child process environment, imports the seed through days 3/5/7, checks idempotence and historical cutoffs, performs an actual CORS preflight, runs the existing eight-check frontend Fetch/history probe, and restarts the service to compare persisted journal/readings. Owned processes/files are cleaned up even on failure. It never resets the configured working database or starts a browser.
 
 Additional checks from frontend: npm ci, npm run check and npm run build. The fixture HTTP suite is still test-only; it is distinct from the real smoke. From backend: python -m pytest and python -m pip check. The read-only check:health tests only service health.
 
@@ -67,3 +67,9 @@ Record scenario/commit/source, exact commands and route/profile/range, expected/
 | Retest | Repeat Dashboard, configured create/correct, rejected/uncertain write, retry and API-stop/restart flows in a browser once URL verification is available. Windows Computer Use stopped because the browser URL could not be verified confidently. No automated UI workaround was attempted. |
 
 Do not expose the fixture server outside loopback or present it as the FastAPI mission backend. Test environment files are local-only and not committed.
+
+## #13 follow-up
+
+History/journal/alerts now use the displayed summary cutoff, including latest view. The real smoke inserts a later same-day reading after a summary is fetched: the old view excludes it and a refreshed view includes it. Startup module/config errors and route/render errors have an independent recovery frame; missing/repeated/changing history pages reject instead of silently returning a partial dataset. Eight non-browser startup/view/history checks and eight real backend client checks pass.
+
+The harness drains server diagnostics through pipes instead of a temporary log file to avoid a Windows cleanup file-lock race. Actual browser verification, including the original R1, remains pending; these changes do not establish its original cause or prove it fixed. See [the #13 report](../testing/frontend13_update.md).

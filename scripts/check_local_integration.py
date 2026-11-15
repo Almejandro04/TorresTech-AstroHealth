@@ -54,18 +54,30 @@ def request(url, *, headers=None, method="GET"):
 
 
 class Backend:
-    def __init__(self, env, directory):
-        self.env, self.directory = env, directory
+    def __init__(self, env):
+        self.env = env
         self.process = None
-        self.log = None
+        self.log = []
+        self.readers = []
 
     def start(self):
-        self.log = (self.directory / "server.log").open("a", encoding="utf-8")
+        self.log = []
         self.process = subprocess.Popen([sys.executable, "-u", "-c", SERVER], cwd=BACKEND,
                                         env=self.env, stdout=subprocess.PIPE,
-                                        stderr=self.log, text=True, encoding="utf-8")
+                                        stderr=subprocess.PIPE, text=True, encoding="utf-8")
         lines = queue.Queue()
-        threading.Thread(target=lambda: lines.put(self.process.stdout.readline()), daemon=True).start()
+        process = self.process
+        def read_errors():
+            for line in process.stderr:
+                self.log.append(line)
+                if len(self.log) > 200:
+                    del self.log[0]
+        self.readers = [
+            threading.Thread(target=lambda: lines.put(process.stdout.readline()), daemon=True),
+            threading.Thread(target=read_errors, daemon=True),
+        ]
+        for reader in self.readers:
+            reader.start()
         try:
             first = lines.get(timeout=15)
             self.url = "http://127.0.0.1:" + str(json.loads(first)["port"])
@@ -80,7 +92,7 @@ class Backend:
             raise RuntimeError("FastAPI did not become healthy")
         except Exception:
             self.stop()
-            detail = (self.directory / "server.log").read_text(encoding="utf-8")
+            detail = "".join(self.log)
             raise RuntimeError("Backend startup failed: " + detail) from None
 
     def stop(self):
@@ -92,11 +104,12 @@ class Backend:
                 except subprocess.TimeoutExpired:
                     self.process.kill()
                     self.process.wait(timeout=5)
+            for reader in self.readers:
+                reader.join(timeout=1)
             self.process.stdout.close()
+            self.process.stderr.close()
             self.process = None
-        if self.log is not None:
-            self.log.close()
-            self.log = None
+            self.readers = []
 
 
 def main(argv=None):
@@ -108,12 +121,13 @@ def main(argv=None):
     checks = []
     with tempfile.TemporaryDirectory(prefix="astrohealth-integration-") as temporary:
         directory = Path(temporary).resolve()
-        # All writable database/log paths are inside this task-owned directory.
+        # The writable database stays inside this task-owned directory.
+        # Server diagnostics use drained pipes, avoiding Windows log-file locks.
         database = directory / "mission.db"
         require(database.parent == directory, "Database escaped the temporary workspace")
         env = {**os.environ, "ASTROHEALTH_DB_PATH": str(database),
                "ASTROHEALTH_CORS_ORIGINS": ORIGIN, "PYTHONIOENCODING": "utf-8"}
-        server = Backend(env, directory)
+        server = Backend(env)
         def import_day(day):
             output = command([sys.executable, "-m", "app.database", "import-json",
                               str(SEED), "--until-day", str(day)], env)
@@ -152,8 +166,9 @@ def main(argv=None):
             import_day(7)
             output = command([node, str(BACKEND / "scripts" / "check_frontend_api.mjs"), url], env)
             print(output, end="")
-            checks.append("7 unchanged frontend Fetch-client checks against actual FastAPI/SQLite")
+            checks.append("8 frontend Fetch/history checks against actual FastAPI/SQLite")
             before, _ = request(url + "/api/astronauts/AST-001/journal?from_day=9&to_day=9")
+            readings_before, _ = request(url + "/api/astronauts/AST-001/readings?from_day=10&to_day=10")
             old_url = url
             server.stop()
             try:
@@ -169,7 +184,8 @@ def main(argv=None):
             require(after["data"][0]["sleep_hours_last_night"] == 0 and after["data"][0]["notes"] == "Corrected",
                     "Journal correction or zero sleep was not persisted")
             readings, _ = request(url + "/api/astronauts/AST-001/readings?from_day=10&to_day=10")
-            require(readings["meta"]["total"] == 1, "Reading retry did not persist exactly one record")
+            require(readings["meta"]["total"] == 2 and readings["data"] == readings_before["data"],
+                    "Reading retry/later observation changed identity or count across restart")
             checks.append("service stop/restart with persistent journal correction, stable identity and reading retry")
         finally:
             server.stop()

@@ -16,6 +16,8 @@ const clientCode = stripTypeScriptTypes(source('apiHealthDataSource'))
   .replace("'./errors'", JSON.stringify(errorsUrl))
   .replace("'./responseValidation'", JSON.stringify(guardsUrl))
 const { createApiHealthDataSource } = await import(moduleUrl(clientCode))
+const historyCode = stripTypeScriptTypes(source('history')).replace("'./errors'", JSON.stringify(errorsUrl))
+const { loadHistory } = await import(moduleUrl(historyCode))
 const { responses, matchesView, errorDetails } = await import(guardsUrl)
 const api = createApiHealthDataSource({ baseUrl, timeoutMs: 5000 })
 let count = 0
@@ -88,5 +90,26 @@ await check('reading creation, canonical retry and conflict', async () => {
   assert.equal(conflict.status, 409)
   assert.equal(errorDetails(await conflict.json()).code, 'READING_CONFLICT')
   assert.equal((await api.getReadings('AST-001', { from_day: 10 })).data[0].reading_id, record.data.reading_id)
+})
+await check('a later observation cannot enter the displayed history before summary refresh', async () => {
+  const displayed = await api.getSummary('AST-001')
+  const entry = { timestamp: '2026-11-10T18:00:00Z', mission_day: 10, heart_rate_bpm: 86,
+    spo2_percent: 96, respiratory_rate_bpm: 18, measurement_context: 'rest', source_type: 'synthetic', source_id: 'SYN-CORE-001' }
+  const response = await fetch(baseUrl + '/api/astronauts/AST-001/readings', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(entry),
+  })
+  assert.equal(response.status, 201)
+  const later = (await response.json()).data
+  const range = { from_day: 10, to_day: 10 }
+  const pinned = await loadHistory(api, 'AST-001', { ...range, as_of: displayed.meta.as_of })
+  assert.equal(pinned.readings.length, 1)
+  assert.equal(pinned.readings.some(r => r.reading_id === later.reading_id), false)
+  const pinnedAlerts = await api.getAlerts('AST-001', { as_of: displayed.meta.as_of })
+  assert.equal(pinnedAlerts.meta.as_of, displayed.meta.as_of)
+  const refreshed = await api.getSummary('AST-001')
+  assert.equal(refreshed.data.latest_metrics.heart_rate_bpm.value, 86)
+  const advanced = await loadHistory(api, 'AST-001', { ...range, as_of: refreshed.meta.as_of })
+  assert.equal(advanced.readings.length, 2)
+  assert.equal(advanced.readings.at(-1).reading_id, later.reading_id)
 })
 console.log(`${count} real FastAPI/SQLite frontend-client checks passed. No browser/UI behavior was tested.`)

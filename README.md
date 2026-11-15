@@ -95,7 +95,7 @@ From the repository root, after installing backend development dependencies:
 .\.venv\Scripts\python.exe scripts\check_local_integration.py --node "C:\Program Files\nodejs\node.exe"
 ```
 
-This additional smoke requires Node **22.13+** because the existing backend client probe loads the unchanged TypeScript client in memory. It uses a new temporary database and its own loopback server/ports, imports days 3 -> 5 -> 7, checks historical cutoffs/idempotence/CORS, executes seven real frontend Fetch checks, and restarts FastAPI to verify journal corrections and reading identity. It stops its own server and removes its disposable database. It does not test the browser or generate DATA-04.
+This additional smoke requires Node **22.13+** because the existing backend client probe loads the unchanged TypeScript client in memory. It uses a new temporary database and its own loopback server/ports, imports days 3 -> 5 -> 7, checks historical cutoffs/idempotence/CORS, executes eight real frontend Fetch/history checks, and restarts FastAPI to verify journal corrections and reading identity. It stops its own server and removes its disposable database. It does not test the browser or generate DATA-04.
 
 For interactive staged replay, run the same import with `--until-day 5` in another backend terminal with the **same absolute ASTROHEALTH_DB_PATH**. Repeating it creates no duplicate readings. Going backwards preserves stored future rows: use `post_import.cutoffs[astronaut_id]` as API `as_of`; `latest_stored_cutoffs` identifies the physical latest observation. Offline `reset` loads the full seed and is not an empty replay start. Never reset a teammate’s working database.
 
@@ -121,8 +121,14 @@ The UI reads through one typed interface, so transport selection does not replac
 
 Use a separate checkout and personal task branch from current `main`. Commit and push reviewable changes, fetch again before integration, preserve teammates' commits and resolve conflicts explicitly. The owner permits direct merges/pushes by existing collaborators with write access; PRs remain optional. Do not force-push shared branches. Database/data changes belong to their owners; preserve the approved contract or coordinate a documented change first.
 
+## Application loading and consistent views
+
+The loading/recovery shell imports the application separately, so a rejected application chunk or connection configuration can show a reload action instead of leaving an empty root. Route/render errors have the same recovery frame; unsaved Journal changes may be lost on reload. Raw configuration values and stack traces are not displayed. These changes still require the pending rendered browser recheck.
+
+History, journal and alert requests share the displayed summary’s observation cutoff, including the latest view. A later reading appears after Refresh data advances that summary. Missing pages, repeated offsets or changing pagination totals are errors rather than partial history shown as complete.
+
 ## Integration and next steps
 
-[Integration smoke procedure](docs/architecture/integration_smoke_test.md) separates verified real transport/persistence from remaining browser/science checks. [Current integration results](docs/testing/integration_update_20261115.md) supersede the older bootstrap-only snapshot in the [historical autonomous report](docs/autonomous_progress.md).
+[Integration smoke procedure](docs/architecture/integration_smoke_test.md) separates verified real transport/persistence from remaining browser/science checks. [Current integration results](docs/testing/integration_update_20261115.md) and [#13 recovery/cutoff update](docs/testing/frontend13_update.md) supersede the older bootstrap-only snapshot in the [historical autonomous report](docs/autonomous_progress.md).
 
 API view/Journal browser acceptance (#13/#17), full integration testing (#21), and the final end-to-end demo rehearsal (#22) remain open. The backend storage/routes/import dependency is delivered; DATA-04, analysis/rules and the browser review remain pending. The JavaScript bundle still exceeds Vite's advisory 500 kB threshold; the warning is visible rather than suppressed.

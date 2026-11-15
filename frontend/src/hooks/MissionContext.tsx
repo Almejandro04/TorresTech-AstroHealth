@@ -27,7 +27,7 @@ export interface MissionValue {
   latestDay: number | null
   viewDay: number | null
   isHistorical: boolean
-  /** Explicit observation cutoff passed to the data source; `undefined` means latest. */
+  /** Observation cutoff shared by view/history/alerts; latest is pinned to its summary response. */
   asOf: string | undefined
   revision: number
   refresh: () => void
@@ -90,17 +90,20 @@ export function MissionProvider({ children, source = healthDataSource }: { child
     astronaut && latestDay !== null && requestedDay !== null && requestedDay >= 1 && requestedDay < latestDay
       ? requestedDay
       : null
-  const asOf = astronaut && historicalDay !== null ? missionDayEndIso(astronaut.mission_start_date, historicalDay) : undefined
+  const historicalCutoff = astronaut && historicalDay !== null ? missionDayEndIso(astronaut.mission_start_date, historicalDay) : undefined
 
   const historical = useResource(
-    astronautId && asOf ? `summary:${astronautId}:${asOf}` : null,
-    () => source.getSummary(astronautId ?? '', { as_of: asOf }),
+    astronautId && historicalCutoff ? `summary:${astronautId}:${historicalCutoff}` : null,
+    () => source.getSummary(astronautId ?? '', { as_of: historicalCutoff }),
     revision,
   )
-  const view = asOf ? historical : latest
+  const view = historicalCutoff ? historical : latest
+  // A new observation may arrive between summary and history/alert requests.
+  // Keep this view at the summary's cutoff until an explicit refresh loads a new one.
+  const asOf = view.status === 'ready' ? view.data.meta.as_of ?? undefined : historicalCutoff
 
   const alerts = useResource(
-    astronautId && latest.status === 'ready' ? `alerts:${astronautId}:${asOf ?? 'latest'}` : null,
+    astronautId && view.status === 'ready' ? `alerts:${astronautId}:${asOf ?? 'latest'}` : null,
     () => source.getAlerts(astronautId ?? '', { as_of: asOf, limit: 1000 }),
     revision,
   )

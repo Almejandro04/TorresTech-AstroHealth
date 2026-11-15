@@ -14,7 +14,7 @@ Commit [9e94071](https://github.com/Almejandro04/TorresTech-AstroHealth/commit/9
 
 - #13: the unchanged frontend Fetch client is now checked against actual FastAPI/SQLite, not only a fixture HTTP server. Profiles, snapshots, history/pagination/cutoffs, empty profile, unavailable analysis, 404/422, journal upsert and reading conflicts pass.
 - #17: a real journal create/correct/retry retains one daily ID, preserves zero sleep, appears in API history/summary and survives a backend restart. Rendered configured-create/error/focus/refresh acceptance still needs review.
-- #21: scripts/check_local_integration.py automates a new task-owned temporary database and loopback server, staged import, idempotence, backward replay, explicit CORS, the existing seven-check client probe, shutdown/restart and persistence. It cleans up its own resources and never resets the working database. The script is run from the repository root with the configured venv Python and Node 22.13+.
+- #21: scripts/check_local_integration.py automates a new task-owned temporary database and loopback server, staged import, idempotence, backward replay, explicit CORS, the existing eight-check client probe, shutdown/restart and persistence. It cleans up its own resources and never resets the working database. The script is run from the repository root with the configured venv Python and Node 22.13+.
 - #22: root/frontend READMEs, demo and integration runbook now describe available storage/routes/import commands, exact setup/configuration and distinct mock versus API behavior. No claim is made that pending analysis generates the fixture warning.
 
 ## Executed checks
@@ -23,14 +23,14 @@ Commit [9e94071](https://github.com/Almejandro04/TorresTech-AstroHealth/commit/9
 | --- | --- |
 | Backend pytest | 307 passed, 6 expected #14/#15 xfails |
 | pip check | No broken requirements |
-| New real integration smoke | Passed: day 3 -> 5 -> 7, stable IDs, no duplicate replay, historical cutoff, CORS, seven real Fetch checks, restart persistence |
+| New real integration smoke | Passed: day 3 -> 5 -> 7, stable IDs, no duplicate replay, historical cutoff, CORS, eight real Fetch/history checks, restart persistence |
 | Clean npm ci | 87 packages installed |
-| npm run check | Passed: 94 contrast pairs, shared mocks, 9 series/default checks, 15 HTTP-fixture client checks |
+| npm run check | Passed: 94 contrast pairs, shared mocks, 9 series/default checks, 15 HTTP-fixture client checks, 8 startup/view/history checks |
 | npm run build | Passed, including TypeScript |
 | API-mode production build | Passed in separate temporary output |
 | Browser UI review | Not performed in this continuation; R1 remains open |
 
-Verification environment: Windows, Python 3.14.5, Node 25.9.0 and npm 11.12.1. The frontend bundle remains approximately 787 kB / 236 kB gzip; Vite's 500 kB advisory is not hidden. Generated build/environment/database artifacts are not committed.
+Verification environment: Windows, Python 3.14.5, Node 25.9.0 and npm 11.12.1. The frontend build now separates an approximately 228 kB recovery entry and 563 kB App chunk (791 kB / 238 kB gzip total); Vite's 500 kB advisory is not hidden. Generated build/environment/database artifacts are not committed.
 
 ## Remaining acceptance
 
@@ -45,3 +45,7 @@ Verification environment: Windows, Python 3.14.5, Node 25.9.0 and npm 11.12.1. T
 R1 is the prior API tab blank after an environment restart with concurrent mock/API dev modes. Mode-specific Vite caches are present, but that proposed correction has not been rendered-retested. Windows Computer Use previously stopped because it could not verify Chrome's URL; no alternative UI automation or new browser claim is made here. See the [exact record](../architecture/integration_smoke_test.md#r1--api-review-reload-became-blank).
 
 Next: repeat the interactive sequence in [the runbook](../architecture/integration_smoke_test.md), then use Ismael's actual export from #6 and Jhonatan's #14/#15 implementations when they land. Fetch main and preserve concurrent changes before every integration. A passing health request or HTTP fixture is not end-to-end acceptance.
+
+## Later #13 follow-up
+
+The [recovery/cutoff update](frontend13_update.md) adds independent startup and route/render recovery, summary-pinned observation requests, strict history pagination and an eighth real-client concurrency check. The smoke harness now drains diagnostic pipes to avoid the observed Windows temporary-log cleanup race. No browser review is claimed.

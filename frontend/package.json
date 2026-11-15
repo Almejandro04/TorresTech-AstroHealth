@@ -12,12 +12,13 @@
     "typecheck": "tsc --noEmit",
     "check:contrast": "node scripts/check-contrast.mjs",
     "check:mocks": "node scripts/check-mocks.mjs",
-    "check": "npm run check:contrast && npm run check:mocks && npm run check:series && npm run check:api",
+    "check": "npm run check:contrast && npm run check:mocks && npm run check:series && npm run check:api && npm run check:views",
     "build": "npm run typecheck && vite build",
     "preview": "vite preview",
     "check:api": "node scripts/check-api.mjs",
     "check:series": "node scripts/check-series.mjs",
-    "check:health": "node scripts/check-health.mjs"
+    "check:health": "node scripts/check-health.mjs",
+    "check:views": "node scripts/check-views.mjs"
   },
   "dependencies": {
     "@fontsource-variable/public-sans": "5.3.0",

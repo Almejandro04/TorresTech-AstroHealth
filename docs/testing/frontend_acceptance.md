@@ -10,9 +10,9 @@ The prior Flight Log review verified four-view navigation, desktop/mobile layout
 
 Current executed checks:
 - Clean npm ci, TypeScript and default/API-mode production builds.
-- All 94 contrast pairs, existing contract mock/write/error/replay checks, 9 series/default checks and 15 HTTP-fixture client checks.
+- All 94 contrast pairs, existing contract mock/write/error/replay checks, 9 series/default checks, 15 HTTP-fixture client checks and 8 non-browser startup/view/history checks.
 - Backend: 307 tests pass with 6 expected analysis/alert failures.
-- Actual FastAPI/SQLite: unchanged frontend Fetch client passes seven checks covering profiles, summary/history/cutoff/pagination, empty/unavailable states, 404/422, journal create/correct/retry and reading conflicts.
+- Actual FastAPI/SQLite: unchanged frontend Fetch client passes eight checks covering profiles, summary/history/cutoff/pagination, empty/unavailable states, 404/422, journal create/correct/retry and reading conflicts.
 - The new root scripts/check_local_integration.py additionally checks staged import over HTTP, historical replay handoff without deleting later records, CORS and journal/reading persistence after service restart.
 
 Fixture transport tests are distinct from the real SQLite/HTTP smoke. Neither is a new browser review. The prior API Dashboard/unconfigured-create gate was seen through the HTTP fixture; the configured-create reload became blank and remains R1 below.
@@ -39,4 +39,8 @@ Windows Computer Use stopped because it could not verify the browser URL confide
 
 ## Limits
 
-The approximately 787 kB JavaScript bundle still emits Vite's advisory chunk warning. Wire/profile/cutoff guards do not establish medical correctness or every backend invariant. Current real smoke data is the seven-day CORE-01 seed; it is distinct from real biomedical records and Ismael's pending 30-day DATA-04 export. API baselines/alerts remain not_implemented until #14/#15.
+The approximately 791 kB combined JavaScript build (228 kB entry + 563 kB App chunk) still emits Vite's advisory chunk warning. Wire/profile/cutoff guards do not establish medical correctness or every backend invariant. Current real smoke data is the seven-day CORE-01 seed; it is distinct from real biomedical records and Ismael's pending 30-day DATA-04 export. API baselines/alerts remain not_implemented until #14/#15.
+
+## #13 loading and cutoff follow-up
+
+[New recovery/cutoff evidence](frontend13_update.md): caught module/config startup failures, route/render recovery, summary-pinned history/journal/alerts, incomplete-pagination rejection and eight real FastAPI/SQLite client checks. These are code/HTTP/server-render checks. The original R1 cause and actual new recovery layout/focus/reload remain pending in-browser acceptance.
