@@ -11,12 +11,63 @@ Owners: Jorge (@Almejandro04) and Jhonatan (@TheJhonatan144); data support: Isma
 | Path | Evidence | Status |
 | --- | --- | --- |
 | Mock Flight Log | Shared fixtures and prior desktop/mobile/form review | Passed for the mock scope; #10/#11/#12 closed |
-| Backend models/API/import | Full pytest suite after the replay fix | 307 passed; 6 expected #14/#15 xfails |
+| Backend models/API/import/analysis/alerts | Full pytest suite | 368 passed; 4 strict xfails (2 by the day-5/day-6 baseline policy difference, 2 earlier-stage fixtures) |
 | Frontend Fetch -> real FastAPI/SQLite | Unchanged client probe, eight checks over HTTP | Passed, including journal create/correct/retry and reading conflict |
 | Staged ingestion -> API | Day 3 -> 5, repeated import and backward cutoff | Passed with the seven-day CORE-01 seed |
 | Restart persistence | Stored journal correction/zero sleep/stable ID and single reading after server restart | Passed in an isolated database |
 | Actual API browser/form/error flows | R1 and configured-create/failure controls | Pending; no new browser review claimed |
-| DATA-04 -> analysis -> generated alert -> UI | #6/#14/#15 plus rendered integration | Pending |
+| DATA-04 -> analysis -> generated alert | 30-day mission stage of `check_local_integration.py`: import + idempotent re-import, real HTTP cutoffs days 5/9/19/22/30, AST-102, scenario nulls, frontend `responses.*`/`matchesView` guards on days 19 and 22 | Passed (automated HTTP) |
+| Rendered 30-day UI | Dashboard/Analytics/Alerts/Journal with the 30-day mission | Manual — see [integration results](../testing/integration21_results.md) |
+| 200% zoom | Actual browser zoom on the four views | Manual — see [integration results](../testing/integration21_results.md) |
+
+## Clean-start 30-day demo
+
+From the repository root in PowerShell:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r backend\requirements-dev.txt
+$env:ASTROHEALTH_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
+$env:ASTROHEALTH_DB_PATH = Join-Path $env:TEMP ("astrohealth-demo-" + [guid]::NewGuid().ToString("N") + ".db")
+cd backend
+..\.venv\Scripts\python.exe -m app.database import-json ..\docs\examples\mission_seed.json --until-day 7
+..\.venv\Scripts\python.exe -m app.database import-json ..\data\synthetic\mission_ast101_ast102.json --until-day 30
+..\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
+```
+
+In another terminal:
+
+```powershell
+cd frontend
+npm ci
+```
+
+Create `frontend/.env.local` (local only, not committed):
+
+```dotenv
+VITE_DATA_SOURCE=api
+VITE_API_BASE_URL=http://localhost:8000
+VITE_JOURNAL_SOURCE_ID=SYN-AH-MISSION-001
+VITE_JOURNAL_TIME_UTC=08:00:00
+```
+
+Then `npm run dev`, open http://127.0.0.1:5173/#/dashboard and choose AST-101.
+
+## Expected 30-day scenario
+
+| Cutoff (AST-101) | Expected |
+| --- | --- |
+| End of day 5 | No reference yet: baselines and alert evaluation `insufficient_data` |
+| End of day 9 | Reference available (heart rate 72.2); isolated spike, no alert |
+| Days 12–14 | Nulls visible: day 12 rest heart rate and day 13 rest respiratory rate are gaps; no day-14 journal entry. Cards show the latest non-null value with its own time and context (end of day 12: the day-12 exercise heart rate) |
+| End of day 19 | One `DEMO-HR-CHANGE` warning, window days 18–19, observed 80 |
+| End of day 22 | The same alert `resolved` at 2026-11-22T12:00:00Z |
+| AST-102 | Insufficient data ("More observations needed"), never an empty evaluated list |
+
+## Known limitations
+
+- The alert explanation says "Fixture days 18-19 …" for the synthetic mission. The text must match the contract fixture `explainable_synthetic_alert`. Severity low; proposal: mission wording in a future contract change.
+- The baseline is available from mission day 6; the contract fixture shows it at the end of day 5 (two strict xfails document this).
+- Vite's bundle-size advisory (> 500 kB) remains visible.
 
 ## One-command real smoke
 
@@ -52,8 +103,7 @@ Record scenario/commit/source, exact commands and route/profile/range, expected/
 
 ## Remaining blockers
 
-- #6: Ismael's reproducible mission dataset; the existing seven-day fixture is not that deliverable.
-- #14/#15: actual baseline/trend calculations and experimental alert evaluation. Six strict expected failures reflect those missing cases.
+- #6, #14, #15: delivered; the 30-day mission stage of the smoke checks them together over real HTTP.
 - #13/#17: rendered API view/write/error acceptance, including R1 below.
 - #21/#22: final supported end-to-end rehearsal, actual zoom and broader assistive/cross-browser review.
 - A documented rest/null discrepancy for not_implemented baseline examples remains in the backend README; the HTTP shape guard accepts the pending null context, and no shared contract/fixture is edited here.

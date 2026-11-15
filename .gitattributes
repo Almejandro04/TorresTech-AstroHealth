@@ -1,0 +1,5 @@
+# Generated data is compared byte-for-byte with a fresh generation, so its
+# line endings must not change on checkout (core.autocrlf on Windows).
+data/synthetic/** text eol=lf
+data/processed/** text eol=lf
+data/tests/fixtures/** text eol=lf
