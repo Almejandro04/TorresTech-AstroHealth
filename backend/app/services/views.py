@@ -1,9 +1,9 @@
 """Read views over stored records: observation cutoff, day filters, summary.
 
 `as_of` is an observation-time cutoff. Nothing observed after it may appear in
-or influence a response. Baselines (#14) and alert evaluation (#15) are not
-implemented; their explicit `not_implemented` states are produced here so the
-response schemas stay stable when those issues replace them.
+or influence a response. Baselines come from `app.services.analysis` (#14).
+Alert evaluation (#15) is not implemented; its explicit `not_implemented`
+state is produced here so the response schema stays stable when it lands.
 """
 
 import sqlite3
@@ -27,6 +27,7 @@ from app.models.responses import (
 )
 from app.models.schemas import Astronaut, HealthAlert, HealthJournal, HealthReading
 from app.models.validation import FieldIssue, RecordValidationError
+from app.services import analysis
 
 RecordT = TypeVar("RecordT", HealthReading, HealthJournal, HealthAlert)
 
@@ -103,7 +104,7 @@ def page(items: list[RecordT], limit: int, offset: int) -> list[RecordT]:
     return items[offset : offset + limit]
 
 
-# --- analysis placeholders ----------------------------------------------------
+# --- alerts placeholder and baselines -----------------------------------------
 
 
 def alert_view(
@@ -118,26 +119,33 @@ def alert_view(
     return "not_implemented", []
 
 
-def _baselines() -> Baselines:
-    """Explicit placeholders until baselines are calculated (#14)."""
+def _baselines(
+    astronaut: Astronaut,
+    readings: list[HealthReading],
+    journal: list[HealthJournal],
+    as_of: str | None,
+) -> Baselines:
+    """Map each indicator's experimental reference to the contract's BaselineMetric.
 
-    def pending() -> BaselineMetric:
+    Without enough data the status is `insufficient_data`: no value, no
+    window, no method, and `sample_count` is how many valid observations the
+    reference window holds so far. The comparable context is always stated.
+    """
+
+    def metric(indicator: str) -> BaselineMetric:
+        result = analysis.analyze_indicator(astronaut, readings, journal, indicator, as_of)
+        baseline = result.baseline
         return BaselineMetric(
-            status="not_implemented",
-            value=None,
-            sample_count=0,
-            reference_start=None,
-            reference_end=None,
-            measurement_context=None,
-            method=None,
+            status=baseline.status,
+            value=baseline.value,
+            sample_count=baseline.sample_count,
+            reference_start=baseline.reference_start,
+            reference_end=baseline.reference_end,
+            measurement_context=result.context,
+            method=analysis.BASELINE_METHOD if baseline.status == "available" else None,
         )
 
-    return Baselines(
-        heart_rate_bpm=pending(),
-        spo2_percent=pending(),
-        respiratory_rate_bpm=pending(),
-        sleep_hours_last_night=pending(),
-    )
+    return Baselines(**{name: metric(name) for name in analysis.BASELINE_CONTEXTS})
 
 
 _SEVERITY_ORDER = {"info": 0, "warning": 1, "critical": 2}
@@ -203,6 +211,6 @@ def build_summary(
         latest_reading=readings[-1] if readings else None,
         latest_journal=journal[-1] if journal else None,
         latest_metrics=LatestMetrics(**snapshots),
-        baselines=_baselines(),
+        baselines=_baselines(astronaut, readings, journal, as_of),
         alert_summary=_alert_summary(*alert_view(conn, astronaut, as_of)),
     )

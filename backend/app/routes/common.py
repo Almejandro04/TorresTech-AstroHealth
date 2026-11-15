@@ -61,18 +61,38 @@ def _load_cases() -> dict[str, dict[str, Any]]:
 _CASES = _load_cases()
 
 
+def _seed_baseline(value: float, context: str | None, hour: str) -> dict[str, Any]:
+    return {
+        "status": "available",
+        "value": value,
+        "sample_count": 5,
+        "reference_start": f"2026-11-01T{hour}:00:00Z",
+        "reference_end": f"2026-11-05T{hour}:00:00Z",
+        "measurement_context": context,
+        "method": "experimental_fixed_window_mean_v1",
+    }
+
+
+# Baselines of the demo seed for AST-001 at any cutoff from mission day 6 on.
+_SEED_BASELINES_DAY_7 = {
+    "heart_rate_bpm": _seed_baseline(72.0, "rest", "12"),
+    "spo2_percent": _seed_baseline(98.0, "rest", "12"),
+    "respiratory_rate_bpm": _seed_baseline(16.0, "rest", "12"),
+    "sleep_hours_last_night": _seed_baseline(7.5, None, "08"),
+}
+
+
 def _examples(names: tuple[str, ...], part: str) -> dict[str, dict[str, Any]]:
     found = {}
     for name in names:
         case = _CASES.get(name)
         if case is not None:
             value = deepcopy(case["response"]["body"] if part == "response" else case["request"]["body"])
-            # The #8 brief explicitly requires all pending baseline context
-            # fields to be null. The unchanged example has "rest" for vitals;
-            # document the actual API behavior without editing shared fixtures.
+            # The shared example shows the stage before baselines existed.
+            # Document what the API returns now for the same request, without
+            # editing the shared fixtures; a test compares it to the live API.
             if part == "response" and name == "summary_before_analysis_is_implemented":
-                for baseline in value["data"]["baselines"].values():
-                    baseline["measurement_context"] = None
+                value["data"]["baselines"] = deepcopy(_SEED_BASELINES_DAY_7)
             found[name] = {"summary": name.replace("_", " "), "value": value}
     return found
 
