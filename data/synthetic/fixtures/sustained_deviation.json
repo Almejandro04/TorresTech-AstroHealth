@@ -1,0 +1,198 @@
+{
+  "schema_version": "0.1.0",
+  "source": {
+    "source_id": "SYN-AH-MISSION-001",
+    "source_type": "synthetic",
+    "description": "Synthetic 30-day AstroHealth mission for fictional astronauts; not real astronaut or patient observations.",
+    "generator": "data/scripts/generate_synthetic_mission.py",
+    "generator_version": "1.0.0",
+    "command": "python data/scripts/generate_synthetic_mission.py --seed 2026 --start-date 2026-11-01",
+    "seed": 2026,
+    "schema_version": "0.1.0",
+    "scenario": "AST-101: stable days 1-5, isolated spike day 9, missing values days 12-14, sustained resting heart-rate change days 18-21, return day 22, recovery days 24-30. AST-102: days 1-3 only.",
+    "limitations": "Synthetic fictional mission. Values are simulation assumptions chosen inside published ranges and introduced changes; not a validated physiological model, not astronaut data and not clinically validated.",
+    "is_clinically_validated": false,
+    "planned_mission_days": 30
+  },
+  "astronauts": [
+    {
+      "astronaut_id": "AST-202",
+      "name": "Demo Astronaut 202",
+      "is_fictional": true,
+      "mission_start_date": "2026-11-01",
+      "planned_duration_days": 30
+    }
+  ],
+  "readings": [
+    {
+      "astronaut_id": "AST-202",
+      "timestamp": "2026-11-01T12:00:00Z",
+      "mission_day": 1,
+      "heart_rate_bpm": 70,
+      "spo2_percent": 98,
+      "respiratory_rate_bpm": 15,
+      "measurement_context": "rest",
+      "source_type": "synthetic",
+      "source_id": "SYN-AH-MISSION-001"
+    },
+    {
+      "astronaut_id": "AST-202",
+      "timestamp": "2026-11-02T12:00:00Z",
+      "mission_day": 2,
+      "heart_rate_bpm": 70,
+      "spo2_percent": 98,
+      "respiratory_rate_bpm": 15,
+      "measurement_context": "rest",
+      "source_type": "synthetic",
+      "source_id": "SYN-AH-MISSION-001"
+    },
+    {
+      "astronaut_id": "AST-202",
+      "timestamp": "2026-11-03T12:00:00Z",
+      "mission_day": 3,
+      "heart_rate_bpm": 70,
+      "spo2_percent": 98,
+      "respiratory_rate_bpm": 15,
+      "measurement_context": "rest",
+      "source_type": "synthetic",
+      "source_id": "SYN-AH-MISSION-001"
+    },
+    {
+      "astronaut_id": "AST-202",
+      "timestamp": "2026-11-04T12:00:00Z",
+      "mission_day": 4,
+      "heart_rate_bpm": 70,
+      "spo2_percent": 98,
+      "respiratory_rate_bpm": 15,
+      "measurement_context": "rest",
+      "source_type": "synthetic",
+      "source_id": "SYN-AH-MISSION-001"
+    },
+    {
+      "astronaut_id": "AST-202",
+      "timestamp": "2026-11-05T12:00:00Z",
+      "mission_day": 5,
+      "heart_rate_bpm": 70,
+      "spo2_percent": 98,
+      "respiratory_rate_bpm": 15,
+      "measurement_context": "rest",
+      "source_type": "synthetic",
+      "source_id": "SYN-AH-MISSION-001"
+    },
+    {
+      "astronaut_id": "AST-202",
+      "timestamp": "2026-11-06T12:00:00Z",
+      "mission_day": 6,
+      "heart_rate_bpm": 78,
+      "spo2_percent": 98,
+      "respiratory_rate_bpm": 15,
+      "measurement_context": "rest",
+      "source_type": "synthetic",
+      "source_id": "SYN-AH-MISSION-001"
+    },
+    {
+      "astronaut_id": "AST-202",
+      "timestamp": "2026-11-07T12:00:00Z",
+      "mission_day": 7,
+      "heart_rate_bpm": 78,
+      "spo2_percent": 98,
+      "respiratory_rate_bpm": 15,
+      "measurement_context": "rest",
+      "source_type": "synthetic",
+      "source_id": "SYN-AH-MISSION-001"
+    },
+    {
+      "astronaut_id": "AST-202",
+      "timestamp": "2026-11-08T12:00:00Z",
+      "mission_day": 8,
+      "heart_rate_bpm": 70,
+      "spo2_percent": 98,
+      "respiratory_rate_bpm": 15,
+      "measurement_context": "rest",
+      "source_type": "synthetic",
+      "source_id": "SYN-AH-MISSION-001"
+    }
+  ],
+  "journal": [
+    {
+      "astronaut_id": "AST-202",
+      "timestamp": "2026-11-01T08:00:00Z",
+      "mission_day": 1,
+      "sleep_hours_last_night": 6.5,
+      "mood_score": 4,
+      "notes": null,
+      "source_type": "synthetic",
+      "source_id": "SYN-AH-MISSION-001"
+    },
+    {
+      "astronaut_id": "AST-202",
+      "timestamp": "2026-11-02T08:00:00Z",
+      "mission_day": 2,
+      "sleep_hours_last_night": 6.5,
+      "mood_score": 4,
+      "notes": null,
+      "source_type": "synthetic",
+      "source_id": "SYN-AH-MISSION-001"
+    },
+    {
+      "astronaut_id": "AST-202",
+      "timestamp": "2026-11-03T08:00:00Z",
+      "mission_day": 3,
+      "sleep_hours_last_night": 6.5,
+      "mood_score": 4,
+      "notes": null,
+      "source_type": "synthetic",
+      "source_id": "SYN-AH-MISSION-001"
+    },
+    {
+      "astronaut_id": "AST-202",
+      "timestamp": "2026-11-04T08:00:00Z",
+      "mission_day": 4,
+      "sleep_hours_last_night": 6.5,
+      "mood_score": 4,
+      "notes": null,
+      "source_type": "synthetic",
+      "source_id": "SYN-AH-MISSION-001"
+    },
+    {
+      "astronaut_id": "AST-202",
+      "timestamp": "2026-11-05T08:00:00Z",
+      "mission_day": 5,
+      "sleep_hours_last_night": 6.5,
+      "mood_score": 4,
+      "notes": null,
+      "source_type": "synthetic",
+      "source_id": "SYN-AH-MISSION-001"
+    },
+    {
+      "astronaut_id": "AST-202",
+      "timestamp": "2026-11-06T08:00:00Z",
+      "mission_day": 6,
+      "sleep_hours_last_night": 6.5,
+      "mood_score": 4,
+      "notes": null,
+      "source_type": "synthetic",
+      "source_id": "SYN-AH-MISSION-001"
+    },
+    {
+      "astronaut_id": "AST-202",
+      "timestamp": "2026-11-07T08:00:00Z",
+      "mission_day": 7,
+      "sleep_hours_last_night": 6.5,
+      "mood_score": 4,
+      "notes": null,
+      "source_type": "synthetic",
+      "source_id": "SYN-AH-MISSION-001"
+    },
+    {
+      "astronaut_id": "AST-202",
+      "timestamp": "2026-11-08T08:00:00Z",
+      "mission_day": 8,
+      "sleep_hours_last_night": 6.5,
+      "mood_score": 4,
+      "notes": null,
+      "source_type": "synthetic",
+      "source_id": "SYN-AH-MISSION-001"
+    }
+  ]
+}

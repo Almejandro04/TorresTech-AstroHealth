@@ -1,0 +1,52 @@
+{
+  "source_id": "SYN-AH-MISSION-001",
+  "seed": 2026,
+  "mission_start_date": "2026-11-01",
+  "label": "[SIMULATION-ASSUMPTION]",
+  "astronauts": {
+    "AST-101": {
+      "reference_days": [
+        1,
+        5
+      ],
+      "reference_rest_heart_rate_bpm": [
+        71,
+        71,
+        73,
+        73,
+        73
+      ],
+      "expected_baseline_heart_rate_bpm": 72.2,
+      "scenario_base_heart_rate_bpm": 72,
+      "days": {
+        "1-5": "Stable reference: rest HR 72 +/- 1, SpO2 97-98, RR 15 +/- 1, sleep 6.25-6.75 h, mood 3-4.",
+        "9": "Isolated spike: rest HR = scenario base + 12 on this day only.",
+        "12": "Rest heart_rate_bpm is null (SpO2 and RR present).",
+        "13": "Rest respiratory_rate_bpm is null.",
+        "14": "No journal entry (absence, not 0).",
+        "18-21": "Sustained change: rest HR = scenario base + 8 (+/- 1).",
+        "22": "Rest HR returns to the scenario base (-1..0).",
+        "18-23": "Sleep 5.0-5.5 h, mood 2, rest SpO2 97 (artificial pattern; no causal claim).",
+        "24-30": "Recovery toward the reference.",
+        "even days": "Additional sleep (03:00Z) and exercise (17:00Z) readings."
+      },
+      "expected_rule": {
+        "rule_id": "DEMO-HR-CHANGE",
+        "rule_version": "fixture-1",
+        "baseline_available_from_day": 6,
+        "no_alert_at_day": 9,
+        "detection_day": 19,
+        "window_days": [
+          18,
+          19
+        ],
+        "severity": "warning",
+        "resolution_day": 22
+      }
+    },
+    "AST-102": {
+      "days": "1-3 only",
+      "expected_evaluation_status": "insufficient_data"
+    }
+  }
+}
