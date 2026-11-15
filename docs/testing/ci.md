@@ -29,6 +29,16 @@ From repository root with that Python and Node 22.13+: python scripts/check_loca
 
 ## Result record
 
-The first workflow run must be inspected before calling CI verified or integrating the workflow into main. Initial branch publication is a validation step, not a passing result. This document will be updated with the actual run result.
+Verified on 2026-11-15: [Actions run 43715674553](https://github.com/Almejandro04/TorresTech-AstroHealth/actions/runs/43715674553) completed successfully on commit `2d64ee0bdd93a3c5103fe4ceaea87a1d2974ca02`, prepared from main `e7fc1a7` on the separate `codex/integration-21-qa-ci-20261115` branch.
+
+| Job | Observed result |
+| --- | --- |
+| Frontend / Ubuntu | Clean npm ci; all 94 contrast pairs; shared mock fixtures; 9 series/defaults, 15 HTTP-client and 8 startup/view/history checks; TypeScript and production build passed |
+| Backend / Ubuntu | pip check passed; 307 passed / 6 expected xfailed; all 8 real frontend-client checks, staged replay/CORS and restart persistence passed |
+| Backend / Windows | pip check passed; 307 passed / 6 expected xfailed; all 8 real frontend-client checks, staged replay/CORS and restart persistence passed |
+
+The build retains the visible chunk-size advisory (App chunk 563.47 kB before gzip); no threshold was raised to hide it. The six expected xfails are the existing #14/#15 baseline/alert contract cases, so a green run does not establish completion of those engines. This result covers the seven-day CORE-01 seed, not the pending DATA-04 generator.
+
+The follow-up commit adds this result record and README links only; it does not change the verified workflow or application source.
 
 The local execution/browser environment became unavailable during this continuation. No new local, keyboard, responsive or 200% zoom results are claimed. Follow the separate [accessibility review plan](accessibility_review.md) once the interactive environment is available.

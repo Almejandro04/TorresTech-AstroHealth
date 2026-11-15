@@ -127,6 +127,10 @@ The loading/recovery shell imports the application separately, so a rejected app
 
 History, journal and alert requests share the displayed summary’s observation cutoff, including the latest view. A later reading appears after Refresh data advances that summary. Missing pages, repeated offsets or changing pagination totals are errors rather than partial history shown as complete.
 
+## Automated verification
+
+[GitHub Actions CI](docs/testing/ci.md) runs frontend checks/build and backend tests plus real SQLite/HTTP replay/restart checks on Ubuntu and Windows for pushes and PRs. All three jobs passed the initial run; six expected #14/#15 xfails remain explicitly pending. Direct integration remains permitted. Browser accessibility is a separate [follow-up checklist](docs/testing/accessibility_review.md).
+
 ## Browser acceptance
 
 [Rendered API/Journal checks and captures](docs/testing/browser13_acceptance.md) cover staged import, filters/replay, offline/retry, persisted Journal create/correct and reload. A separate contract HTTP fixture verifies alert rendering readiness; actual generated alerts remain #15/#21.
