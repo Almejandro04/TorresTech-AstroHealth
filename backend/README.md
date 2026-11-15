@@ -78,6 +78,8 @@ $env:ASTROHEALTH_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,htt
 
 ### Checks (from the `backend` folder)
 
+Test coverage and expected failures: [`docs/testing/backend_tests.md`](../docs/testing/backend_tests.md).
+
 ```powershell
 ..\.venv\Scripts\python.exe -m pytest
 ..\.venv\Scripts\python.exe -m pip check
@@ -339,6 +341,8 @@ $env:ASTROHEALTH_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,htt
 ```
 
 ### Comprobaciones (desde la carpeta `backend`)
+
+Cobertura de pruebas y fallos esperados: [`docs/testing/backend_tests.md`](../docs/testing/backend_tests.md).
 
 ```powershell
 ..\.venv\Scripts\python.exe -m pytest
