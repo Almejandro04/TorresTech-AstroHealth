@@ -1,0 +1,175 @@
+/*
+ * AstroHealth design tokens — "Flight Log".
+ *
+ * Brand tokens carry identity. Semantic tokens carry meaning. They are separate on purpose:
+ * NASA Red appears only in the AstroHealth mark, never on a control or a state, and success
+ * green is reserved for confirmed actions, never for a health condition.
+ *
+ * `npm run check:contrast` parses this file and verifies the real pairs used by the interface.
+ * Keep one hex value per declaration so the check can read it.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Brand — NASA insignia color guide (identity references) */
+  --ah-nasa-blue: #0032A0;
+  --ah-nasa-red: #E4002B;
+
+  /* Surfaces */
+  --ah-page: #FFFFFF;
+  --ah-surface-2: #F2F5FA;
+  --ah-surface-3: #E4E9F2;
+
+  /* Ink */
+  --ah-ink: #0A1A3A;
+  --ah-ink-2: #38445E;
+  --ah-ink-3: #56617A;
+
+  /* Lines */
+  --ah-rule: #D3DAE6;
+  --ah-rule-strong: #0A1A3A;
+  --ah-control-border: #66728C;
+
+  /* Masthead (brand band, identical in both themes) */
+  --ah-masthead: #0032A0;
+  --ah-masthead-ink: #FFFFFF;
+  --ah-masthead-ink-2: #DBE2F2;
+
+  /* Actions and selection */
+  --ah-action: #0032A0;
+  --ah-action-hover: #00267D;
+  --ah-action-ink: #FFFFFF;
+  --ah-link: #0032A0;
+  --ah-selected: #E5EBFA;
+  --ah-selected-ink: #0032A0;
+  --ah-focus: #0032A0;
+  --ah-focus-gap: #FFFFFF;
+
+  /* Semantic: critical attention and errors */
+  --ah-critical: #A50E22;
+  --ah-critical-bg: #FCEBEE;
+  --ah-critical-solid: #A50E22;
+  --ah-critical-solid-ink: #FFFFFF;
+
+  /* Semantic: warning / intermediate attention */
+  --ah-warning: #7A4700;
+  --ah-warning-bg: #FFF2CC;
+  --ah-warning-line: #A86200;
+
+  /* Semantic: success (confirmed actions only) */
+  --ah-success: #0B6B3A;
+  --ah-success-bg: #E3F4EA;
+
+  /* Semantic: information and help */
+  --ah-info: #4B2FA6;
+  --ah-info-bg: #EFEBFB;
+
+  /* Semantic: unknown, missing, pending */
+  --ah-neutral: #38445E;
+  --ah-neutral-bg: #EDF0F6;
+
+  /* Charts — categorical slots validated for color-vision deficiency, never status hues */
+  --ah-series-1: #1A56C4;
+  --ah-series-2: #B8286E;
+  --ah-series-3: #1397B5;
+  --ah-series-unknown: #66728C;
+  --ah-chart-grid: #E4E9F2;
+  --ah-chart-axis: #B4BED0;
+  --ah-chart-reference: #38445E;
+  --ah-chart-gap: #EDF0F6;
+  --ah-chart-window: #E5EBFA;
+
+  /* Overlay */
+  --ah-backdrop: rgba(10, 26, 58, 0.55);
+  --ah-shadow: 0 18px 48px rgba(10, 26, 58, 0.22);
+
+  /* Type */
+  --ah-font-sans: "Public Sans Variable", "Public Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --ah-font-mono: "DM Mono", ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+  /* Space (4px base) */
+  --ah-space-1: 0.25rem;
+  --ah-space-2: 0.5rem;
+  --ah-space-3: 0.75rem;
+  --ah-space-4: 1rem;
+  --ah-space-5: 1.5rem;
+  --ah-space-6: 2rem;
+  --ah-space-7: 3rem;
+
+  /* Shape and size */
+  --ah-radius: 4px;
+  --ah-radius-lg: 8px;
+  --ah-target: 2.75rem;
+  --ah-content: 77.5rem;
+  --ah-gutter: 1.5rem;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --ah-page: #060B18;
+  --ah-surface-2: #111B31;
+  --ah-surface-3: #1A2643;
+
+  /* Ink */
+  --ah-ink: #ECF1FB;
+  --ah-ink-2: #BCC6DB;
+  --ah-ink-3: #97A3BC;
+
+  /* Lines */
+  --ah-rule: #24304C;
+  --ah-rule-strong: #5E6D8C;
+  --ah-control-border: #7A89A8;
+
+  /* Actions and selection — NASA Blue is about 1.8:1 on this page, so actions use a tint */
+  --ah-action: #A3BDFF;
+  --ah-action-hover: #BDD0FF;
+  --ah-action-ink: #06122F;
+  --ah-link: #A3BDFF;
+  --ah-selected: #152452;
+  --ah-selected-ink: #A3BDFF;
+  --ah-focus: #A3BDFF;
+  --ah-focus-gap: #060B18;
+
+  /* Semantic */
+  --ah-critical: #FFA0AC;
+  --ah-critical-bg: #3B101A;
+  --ah-critical-solid: #FFA0AC;
+  --ah-critical-solid-ink: #2A0810;
+
+  --ah-warning: #FFCF70;
+  --ah-warning-bg: #33260A;
+  --ah-warning-line: #E3A53A;
+
+  --ah-success: #77E0A6;
+  --ah-success-bg: #0C2E1F;
+
+  --ah-info: #C8B9FF;
+  --ah-info-bg: #231B47;
+
+  --ah-neutral: #BCC6DB;
+  --ah-neutral-bg: #111B31;
+
+  /* Charts — the same hues stepped for the dark surface and validated separately */
+  --ah-series-1: #3370FF;
+  --ah-series-2: #E44494;
+  --ah-series-3: #009BC2;
+  --ah-series-unknown: #7A89A8;
+  --ah-chart-grid: #1A2643;
+  --ah-chart-axis: #3A4868;
+  --ah-chart-reference: #BCC6DB;
+  --ah-chart-gap: #111B31;
+  --ah-chart-window: #152452;
+
+  /* Overlay */
+  --ah-backdrop: rgba(2, 5, 12, 0.72);
+  --ah-shadow: 0 18px 48px rgba(0, 0, 0, 0.6);
+}
+
+@media (max-width: 40rem) {
+  :root {
+    --ah-gutter: 1rem;
+  }
+}

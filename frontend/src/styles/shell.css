@@ -1,0 +1,340 @@
+/* Shell: brand band, mission context bar, main column, footer, and the mobile tab bar. */
+
+.app {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+  flex-direction: column;
+}
+
+.skip-link {
+  position: absolute;
+  top: -5rem;
+  left: var(--ah-gutter);
+  z-index: 40;
+  padding: var(--ah-space-3) var(--ah-space-4);
+  border-radius: var(--ah-radius);
+  background: var(--ah-page);
+  color: var(--ah-ink);
+  font-weight: 600;
+}
+
+.skip-link:focus { top: var(--ah-space-2); }
+
+/* Masthead: the NASA Blue identity band. White focus ring inside it. */
+.masthead {
+  background: var(--ah-masthead);
+  color: var(--ah-masthead-ink);
+}
+
+.masthead :focus-visible { outline-color: var(--ah-masthead-ink); }
+
+.masthead__inner {
+  display: flex;
+  align-items: stretch;
+  gap: var(--ah-space-5);
+  max-width: var(--ah-content);
+  min-height: 4rem;
+  margin: 0 auto;
+  padding: 0 var(--ah-gutter);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ah-space-3);
+  color: var(--ah-masthead-ink);
+  text-decoration: none;
+}
+
+.brand-mark { flex: none; }
+
+.brand__name {
+  font-size: 1.1875rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.masthead__button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ah-space-2);
+  align-self: center;
+  min-height: var(--ah-target);
+  margin-left: auto;
+  padding: 0 var(--ah-space-3);
+  border: 1px solid var(--ah-masthead-ink-2);
+  border-radius: var(--ah-radius);
+  background: transparent;
+  color: var(--ah-masthead-ink);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.masthead__button:hover { background: rgb(255 255 255 / 0.14); }
+
+/* Primary navigation, masthead variant: the active tab takes the page color, like a folder tab. */
+.nav ul {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nav--masthead { display: flex; align-items: flex-end; }
+.nav--masthead ul { gap: var(--ah-space-1); }
+
+.nav--masthead .nav__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ah-space-2);
+  min-height: 3rem;
+  padding: 0 var(--ah-space-4);
+  border-radius: 6px 6px 0 0;
+  color: var(--ah-masthead-ink-2);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 120ms, color 120ms;
+}
+
+.nav--masthead .nav__link:hover { background: rgb(255 255 255 / 0.14); color: var(--ah-masthead-ink); }
+
+.nav--masthead .nav__link.is-active {
+  background: var(--ah-surface-2);
+  color: var(--ah-selected-ink);
+}
+
+/* The count is neutral on purpose: level and urgency are stated inside Alerts, with labels. */
+.nav__count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.375rem;
+  height: 1.375rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--ah-masthead-ink);
+  color: var(--ah-masthead);
+  font-family: var(--ah-font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.nav__link.is-active .nav__count,
+.nav--tabbar .nav__count {
+  background: var(--ah-action);
+  color: var(--ah-action-ink);
+}
+
+.nav--tabbar { display: none; }
+
+/* Mission context bar: astronaut, mission view, and timeline stay visible on every view. */
+.mission-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--ah-rule);
+  background: var(--ah-surface-2);
+}
+
+.mission-bar__inner {
+  display: grid;
+  grid-template-columns: minmax(13rem, 16rem) minmax(17rem, 19.5rem) minmax(12rem, 1fr) auto;
+  align-items: end;
+  gap: var(--ah-space-3) var(--ah-space-5);
+  max-width: var(--ah-content);
+  margin: 0 auto;
+  padding: var(--ah-space-3) var(--ah-gutter);
+}
+
+.mission-bar__field {
+  display: grid;
+  gap: var(--ah-space-1);
+  min-width: 0;
+}
+
+.mission-bar__timeline {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.mission-bar__caption {
+  color: var(--ah-ink-2);
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
+
+.mission-bar__demo { align-self: end; white-space: nowrap; }
+
+.timeline {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  align-items: end;
+  gap: 2px;
+  height: 1.75rem;
+}
+
+.timeline--empty { border-bottom: 1px dashed var(--ah-control-border); }
+
+.timeline__day {
+  position: relative;
+  display: block;
+  height: 0.75rem;
+  padding: 0;
+  border: 1px solid var(--ah-control-border);
+  border-radius: 2px;
+  background: transparent;
+}
+
+button.timeline__day { cursor: pointer; }
+button.timeline__day:hover { height: 1.125rem; }
+
+/* In view: filled. Recorded but after the cutoff: outlined in the action color. Planned: hollow. */
+.timeline__day--in-view { border-color: var(--ah-action); background: var(--ah-action); }
+.timeline__day--later { border: 2px solid var(--ah-action); }
+
+.timeline__day--current {
+  height: 1.375rem;
+  border-color: var(--ah-ink);
+  background: var(--ah-ink);
+}
+
+.timeline__alert {
+  position: absolute;
+  top: -0.6rem;
+  left: 50%;
+  width: 0.4rem;
+  height: 0.4rem;
+  background: var(--ah-ink);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.timeline-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.timeline-key .timeline__alert { position: static; transform: rotate(45deg); }
+
+.history-banner {
+  border-top: 1px solid var(--ah-info);
+  background: var(--ah-info-bg);
+  color: var(--ah-info);
+}
+
+.history-banner__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ah-space-2) var(--ah-space-3);
+  max-width: var(--ah-content);
+  margin: 0 auto;
+  padding: var(--ah-space-2) var(--ah-gutter);
+  font-size: 0.9375rem;
+}
+
+.history-banner__inner svg { flex: none; }
+.history-banner__inner p { flex: 1 1 16rem; }
+.history-banner__inner .button { color: var(--ah-ink); }
+
+/* Main column and footer */
+.main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--ah-content);
+  margin: 0 auto;
+  padding: var(--ah-space-6) var(--ah-gutter) var(--ah-space-7);
+}
+
+.footer {
+  border-top: 1px solid var(--ah-rule);
+  background: var(--ah-surface-2);
+  color: var(--ah-ink-2);
+  font-size: 0.875rem;
+}
+
+.footer__inner {
+  display: grid;
+  gap: var(--ah-space-1);
+  max-width: var(--ah-content);
+  margin: 0 auto;
+  padding: var(--ah-space-4) var(--ah-gutter);
+}
+
+.footer__credit { color: var(--ah-ink-3); font-size: 0.8125rem; }
+
+/* Tablet: the timeline takes its own row. */
+@media (max-width: 68rem) {
+  .mission-bar__inner { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .mission-bar__timeline { grid-column: 1 / -1; grid-row: 2; }
+}
+
+/* Phone: destinations move to a fixed bottom bar within thumb reach. */
+@media (max-width: 55rem) {
+  .nav--masthead { display: none; }
+  .masthead__inner { min-height: 3.5rem; }
+
+  .nav--tabbar {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 30;
+    display: block;
+    border-top: 1px solid var(--ah-rule);
+    background: var(--ah-page);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .nav--tabbar ul { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+  .nav--tabbar .nav__link {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    min-height: 3.75rem;
+    border-top: 3px solid transparent;
+    color: var(--ah-ink-2);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .nav--tabbar .nav__link.is-active {
+    border-top-color: var(--ah-selected-ink);
+    background: var(--ah-selected);
+    color: var(--ah-selected-ink);
+  }
+
+  .nav--tabbar .nav__link:focus-visible { outline-offset: -3px; }
+  .nav--tabbar .nav__count { position: absolute; top: 0.3rem; left: calc(50% + 0.5rem); }
+
+  .mission-bar { position: static; }
+  .footer { padding-bottom: calc(3.75rem + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 40rem) {
+  .mission-bar__inner { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--ah-space-3); }
+  .mission-bar__timeline { grid-row: auto; }
+  .mission-bar__demo { grid-column: 1 / -1; justify-self: start; }
+  .mission-bar .stepper__step { display: none; }
+  .main { padding-top: var(--ah-space-5); }
+}
+
+/* Short viewports (landscape phones, 200% zoom on small windows): nothing stays pinned over content. */
+@media (max-height: 30rem) {
+  .mission-bar { position: static; }
+  .nav--tabbar { position: static; }
+  .footer { padding-bottom: 0; }
+}

@@ -130,3 +130,12 @@ export interface HealthSummary {
     recent: HealthAlert[]
   }
 }
+
+export type AlertStatus = HealthAlert['status']
+export type ApiErrorDetail = ApiErrorResponse['error']['details'][number]
+
+export interface AlertListMeta extends PaginationMeta {
+  evaluation_status: EvaluationStatus
+}
+
+export type AlertListResponse = ApiResponse<HealthAlert[], AlertListMeta>

@@ -11,3 +11,7 @@ Thumbs.db
 __pycache__/
 .venv/
 *.sqlite3
+
+*.py[cod]
+
+.pytest_cache/
