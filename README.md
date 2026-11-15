@@ -2,18 +2,18 @@
 
 An English-language educational prototype for monitoring a fictional astronaut mission. Flight Log displays vital observations, daily self-reports, individual reference comparisons and explainable experimental alerts.
 
-**Two explicit modes: the Flight Log mock demo and the real FastAPI/SQLite transport.** The backend now stores fictional profiles, readings and journal entries, exposes their REST endpoints, and supports atomic JSON/CSV import and staged mission days. Real Fetch-client, replay and restart-persistence checks pass with the seven-day contract seed. Current API/Journal browser acceptance is verified; DATA-04 and calculated baselines/alerts remain pending. This project is not a validated diagnostic system and is not affiliated with or endorsed by NASA.
+**Two explicit modes: the Flight Log mock demo and the real FastAPI/SQLite transport.** The backend now stores fictional profiles, readings and journal entries, exposes their REST endpoints, and supports atomic JSON/CSV import and staged mission days. Real Fetch-client, replay and restart-persistence checks pass with the seven-day contract seed. Current API/Journal browser acceptance is verified. The 30-day synthetic mission (DATA-04), experimental baselines and the alert engine are implemented and checked over real HTTP; the rendered 30-day UI check is manual. This project is not a validated diagnostic system and is not affiliated with or endorsed by NASA.
 
 ## Current capabilities
 
 | Area | Available now | Remaining |
 | --- | --- | --- |
-| Dashboard | Five indicators with original timestamps/units/context/provenance; missing and earlier readings stay identifiable | Full DATA-04/analysis scenario |
+| Dashboard | Five indicators with original timestamps/units/context/provenance; missing and earlier readings stay identifiable | Manual rendered check of the 30-day mission (#21) |
 | Analytics | Vital and daily-journal charts, periods, individual reference, explicit gaps, accessible tables | Final cross-browser/accessibility review |
-| Alerts | Read-only list/detail, status and explanation; labeled extra presentation samples | Real backend rule engine |
+| Alerts | Read-only list/detail, status and explanation; backend rule `DEMO-HR-CHANGE` generates and resolves alerts | Manual rendered check of generated alerts (#21) |
 | Journal | Mock workflow and real HTTP create/correct/retry; SQLite persistence across restart verified | Broader assistive/cross-browser review |
-| API | SQLite, profiles/readings/journal/summary/alerts routes, JSON/CSV import, staged days, explicit CORS, Swagger | Calculated references/trends and alert engine (#14/#15) |
-| Data | Seven-day contract seed, two fictional profiles, fixtures/CSV examples | Reproducible 30-day generator and real-data research/processing |
+| API | SQLite, profiles/readings/journal/summary/alerts routes, JSON/CSV import, staged days, explicit CORS, Swagger, experimental baselines (#14) and alert engine (#15) | HTTP exposure of trends (needs a contract agreement) |
+| Data | Contract seed; reproducible 30-day synthetic mission (DATA-04); processed PhysioNet BIDMC subset; indicator and source research | Scientific review of the experimental rule |
 
 The planned mission timeline is 30 days; the shared seed contains seven observed days, not 30 generated days.
 
@@ -95,7 +95,7 @@ From the repository root, after installing backend development dependencies:
 .\.venv\Scripts\python.exe scripts\check_local_integration.py --node "C:\Program Files\nodejs\node.exe"
 ```
 
-This additional smoke requires Node **22.13+** because the existing backend client probe loads the unchanged TypeScript client in memory. It uses a new temporary database and its own loopback server/ports, imports days 3 -> 5 -> 7, checks historical cutoffs/idempotence/CORS, executes eight real frontend Fetch/history checks, and restarts FastAPI to verify journal corrections and reading identity. It stops its own server and removes its disposable database. It does not test the browser or generate DATA-04.
+This additional smoke requires Node **22.13+** because the existing backend client probe loads the unchanged TypeScript client in memory. It uses a new temporary database and its own loopback server/ports, imports days 3 -> 5 -> 7, checks historical cutoffs/idempotence/CORS, executes eight real frontend Fetch/history checks, and restarts FastAPI to verify journal corrections and reading identity. A second stage imports the 30-day synthetic mission into its own temporary database and checks baseline, generated alert, resolution, nulls and frontend guards over real HTTP. It stops its own servers and removes its disposable databases. It does not test the browser.
 
 For interactive staged replay, run the same import with `--until-day 5` in another backend terminal with the **same absolute ASTROHEALTH_DB_PATH**. Repeating it creates no duplicate readings. Going backwards preserves stored future rows: use `post_import.cutoffs[astronaut_id]` as API `as_of`; `latest_stored_cutoffs` identifies the physical latest observation. Offline `reset` loads the full seed and is not an empty replay start. Never reset a teammate’s working database.
 
@@ -104,8 +104,8 @@ For interactive staged replay, run the same import with `--until-day 5` in anoth
 | Layer | Implementation / target | Owner |
 | --- | --- | --- |
 | UI and transport | React, TypeScript, Vite, Tailwind, Lucide, Recharts; HealthDataSource interface, Fetch or mock adapter | Jorge — [@Almejandro04](https://github.com/Almejandro04) |
-| Backend | FastAPI/Pydantic REST routes, SQLite persistence, JSON/CSV ingestion and staged replay; Pandas analysis/rules pending | Jhonatan — [@TheJhonatan144](https://github.com/TheJhonatan144) |
-| Data and scientific evidence | Contract fixture available; source selection, processing and synthetic generator pending | Ismael — [@BrandonFreire](https://github.com/BrandonFreire) |
+| Backend | FastAPI/Pydantic REST routes, SQLite persistence, JSON/CSV ingestion and staged replay, experimental baselines and alert engine | Jhonatan — [@TheJhonatan144](https://github.com/TheJhonatan144) |
+| Data and scientific evidence | Indicator dictionary, dataset selection, BIDMC processing, 30-day synthetic generator and validation review | Ismael — [@BrandonFreire](https://github.com/BrandonFreire) |
 
 The UI reads through one typed interface, so transport selection does not replace Flight Log views. Physiological/journal cadences remain separate. Cutoffs and timestamps are UTC. The backend owns baseline/alert rules; mock calculations illustrate the agreed fixture cases and do not establish medical thresholds.
 
@@ -115,8 +115,8 @@ The UI reads through one typed interface, so transport selection does not replac
 
 - [Accepted API/data contract v0.1.0](docs/api_contract.md), [shared examples](docs/examples/api_examples.json), [seed manifest](docs/examples/mission_seed.json), [readings CSV](docs/examples/readings.csv), [journal CSV](docs/examples/journal.csv).
 - [UX requirements](docs/ux_requirements.md), [Flight Log rationale and captures](docs/design/redesign_rationale.md), [acceptance evidence](docs/testing/frontend_acceptance.md).
-- Scientific dictionary/source selection remain [#4](https://github.com/Almejandro04/TorresTech-AstroHealth/issues/4) and [#5](https://github.com/Almejandro04/TorresTech-AstroHealth/issues/5). No real biomedical source/license has been selected in main yet.
-- Processing and the roughly 30-day synthetic export remain [#16](https://github.com/Almejandro04/TorresTech-AstroHealth/issues/16) and [#6](https://github.com/Almejandro04/TorresTech-AstroHealth/issues/6). The generator remains pending. Import and database init/seed/reset commands now exist in [backend/README.md](backend/README.md); they do not generate a 30-day mission.
+- Scientific dictionary and source selection: [health indicators](docs/research/health_indicators.md) and [dataset candidates](docs/research/dataset_candidates.md) ([#4](https://github.com/Almejandro04/TorresTech-AstroHealth/issues/4), [#5](https://github.com/Almejandro04/TorresTech-AstroHealth/issues/5)). Selected source: PhysioNet BIDMC v1.0.0 (ODC-By).
+- BIDMC processing and the 30-day synthetic mission: [data/README.md](data/README.md) and [data/synthetic/README.md](data/synthetic/README.md) ([#16](https://github.com/Almejandro04/TorresTech-AstroHealth/issues/16), [#6](https://github.com/Almejandro04/TorresTech-AstroHealth/issues/6)). Import and database init/seed/reset commands are in [backend/README.md](backend/README.md).
 - Journal source/time, baseline assumptions and introduced changes are simulation conventions. All current demo profiles/measurements are fictional; terrestrial patients must never be relabeled as astronauts.
 
 ## Team workflow
@@ -131,14 +131,14 @@ History, journal and alert requests share the displayed summary’s observation 
 
 ## Automated verification
 
-[GitHub Actions CI](docs/testing/ci.md) runs frontend checks/build and backend tests plus real SQLite/HTTP replay/restart checks on Ubuntu and Windows for pushes and PRs. All three jobs passed the initial run; six expected #14/#15 xfails remain explicitly pending. Direct integration remains permitted. Browser accessibility is a separate [follow-up checklist](docs/testing/accessibility_review.md).
+[GitHub Actions CI](docs/testing/ci.md) runs frontend checks/build and backend tests plus real SQLite/HTTP replay/restart checks on Ubuntu and Windows for pushes and PRs. All three jobs passed the initial run. The backend suite now reports 4 strict xfails: two by the documented day-5/day-6 baseline policy difference and two earlier-stage fixtures. Direct integration remains permitted. Browser accessibility is a separate [follow-up checklist](docs/testing/accessibility_review.md).
 
 ## Browser acceptance
 
-[Rendered API/Journal checks and captures](docs/testing/browser13_acceptance.md) cover staged import, filters/replay, offline/retry, persisted Journal create/correct and reload. A separate contract HTTP fixture verifies alert rendering readiness; actual generated alerts remain #15/#21.
+[Rendered API/Journal checks and captures](docs/testing/browser13_acceptance.md) cover staged import, filters/replay, offline/retry, persisted Journal create/correct and reload. A separate contract HTTP fixture verifies alert rendering readiness; generated alerts are checked over real HTTP, and their rendered check is manual in [#21 results](docs/testing/integration21_results.md).
 
 ## Integration and next steps
 
 [Integration smoke procedure](docs/architecture/integration_smoke_test.md) separates verified real transport/persistence from remaining browser/science checks. [Current integration results](docs/testing/integration_update_20261115.md) and [#13 recovery/cutoff update](docs/testing/frontend13_update.md) supersede the older bootstrap-only snapshot in the [historical autonomous report](docs/autonomous_progress.md).
 
-Current API view/Journal acceptance (#13/#17) is complete. Full integration (#21) and final demo rehearsal (#22) remain open for DATA-04, actual analysis/rules, measured zoom and broader accessibility. The JavaScript bundle still exceeds Vite's advisory 500 kB threshold; the warning is visible rather than suppressed.
+Current API view/Journal acceptance (#13/#17) is complete. Full integration (#21) and final demo rehearsal (#22) remain open for the manual rendered 30-day checks, measured zoom and broader accessibility. The JavaScript bundle still exceeds Vite's advisory 500 kB threshold; the warning is visible rather than suppressed.

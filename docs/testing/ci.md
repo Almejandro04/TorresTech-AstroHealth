@@ -11,9 +11,9 @@ The workflow runs on pushes, pull requests and manual workflow_dispatch. It does
 | Frontend | Ubuntu, Node 24 | npm ci, full npm run check, TypeScript and production build |
 | Backend and live integration | Ubuntu and Windows, Python 3.13 / Node 24 | pinned pip install, pip check, isolated pytest and the real FastAPI/SQLite replay/restart smoke |
 
-The frontend suite includes contrast, shared mocks, series/defaults, HTTP fixture transport and startup/view/history checks. HTTP fixture tests remain distinct from the real backend smoke. The backend's current six expected analysis/alert xfails are explicitly reported by pytest; they are not completed #14/#15 functionality. Unexpected failures fail the job; no continue-on-error or blanket skips are configured.
+The frontend suite includes contrast, shared mocks, series/defaults, HTTP fixture transport and startup/view/history checks. HTTP fixture tests remain distinct from the real backend smoke. The backend's current four strict xfails are explicitly reported by pytest: two by the documented day-5/day-6 baseline policy difference and two fixtures that show the earlier not-implemented stage. Baselines (#14) and the alert engine (#15) are implemented. Unexpected failures fail the job; no continue-on-error or blanket skips are configured.
 
-The real smoke creates a new temporary SQLite database and owns its loopback server/ports. It checks staged import, idempotence, historical cutoffs, CORS, eight frontend client/history cases and restart persistence. No working demo database, private records or external biomedical downloads are needed. Browser rendering, keyboard, mobile and actual zoom are not tested by this workflow.
+The real smoke creates a new temporary SQLite database and owns its loopback server/ports. It checks staged import, idempotence, historical cutoffs, CORS, eight frontend client/history cases and restart persistence, then imports the committed 30-day synthetic mission into a second temporary database and checks baseline, generated alert, resolution, nulls and frontend guards over real HTTP. No working demo database, private records or external biomedical downloads are needed. Browser rendering, keyboard, mobile and actual zoom are not tested by this workflow.
 
 ## Permissions and dependency policy
 
@@ -37,7 +37,7 @@ Verified on 2026-11-15: [Actions run 43715674553](https://github.com/Almejandro0
 | Backend / Ubuntu | pip check passed; 307 passed / 6 expected xfailed; all 8 real frontend-client checks, staged replay/CORS and restart persistence passed |
 | Backend / Windows | pip check passed; 307 passed / 6 expected xfailed; all 8 real frontend-client checks, staged replay/CORS and restart persistence passed |
 
-The build retains the visible chunk-size advisory (App chunk 563.47 kB before gzip); no threshold was raised to hide it. The six expected xfails are the existing #14/#15 baseline/alert contract cases, so a green run does not establish completion of those engines. This result covers the seven-day CORE-01 seed, not the pending DATA-04 generator.
+The build retains the visible chunk-size advisory (App chunk 563.47 kB before gzip); no threshold was raised to hide it. At that time the six expected xfails were the then-missing #14/#15 cases and the run covered only the seven-day CORE-01 seed. Since then #14/#15 and DATA-04 have landed: the suite reports 368 passed / 4 strict xfails locally (see [integration results](integration21_results.md)); no newer Actions run is recorded here.
 
 The follow-up commit adds this result record and README links only; it does not change the verified workflow or application source.
 
