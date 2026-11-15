@@ -11,7 +11,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-SCHEMA_VERSION = "0.1.0"
+from app.config import SCHEMA_VERSION, SchemaVersion
+
 SERVICE_NAME = "astrohealth-api"
 
 CORS_ORIGINS_ENV = "ASTROHEALTH_CORS_ORIGINS"
@@ -21,7 +22,7 @@ DEFAULT_CORS_ORIGINS = "http://localhost:5173"
 class ResponseMeta(BaseModel):
     """Metadata present in every response envelope."""
 
-    schema_version: Literal["0.1.0"]
+    schema_version: SchemaVersion
     as_of: str | None
 
 
