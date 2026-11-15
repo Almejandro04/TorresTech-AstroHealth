@@ -37,16 +37,28 @@ class AlertNotFoundError(LookupError):
         super().__init__(f"Alert {alert_id} was not found.")
 
 
-def issues_from_pydantic(error: ValidationError, prefix: str = "body") -> list[FieldIssue]:
-    """Convert Pydantic errors into `{field, message}` issues under `prefix`."""
+def issues_from_errors(errors: list, prefix: str | None = None) -> list[FieldIssue]:
+    """Convert Pydantic-style error items into `{field, message}` issues.
+
+    `prefix` is prepended to each location; request errors already start with
+    `body` or `query`, so they pass none.
+    """
     issues: list[FieldIssue] = []
-    for item in error.errors():
-        field = ".".join([prefix, *(str(part) for part in item["loc"])])
+    for item in errors:
+        parts = [str(part) for part in item["loc"]]
         message = item["msg"]
-        if item["type"] in ("float_type", "int_type") and isinstance(item["input"], str):
+        if item["type"] == "json_invalid":
+            parts, message = ["body"], "Must be valid JSON."
+        elif item["type"] in ("float_type", "int_type") and isinstance(item.get("input"), str):
             message = "Enter a JSON number, not text."
+        field = ".".join(parts if prefix is None else [prefix, *parts])
         issues.append({"field": field, "message": message})
     return issues
+
+
+def issues_from_pydantic(error: ValidationError, prefix: str = "body") -> list[FieldIssue]:
+    """Convert Pydantic errors into `{field, message}` issues under `prefix`."""
+    return issues_from_errors(error.errors(), prefix)
 
 
 def mission_day_issues(

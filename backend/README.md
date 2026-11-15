@@ -14,10 +14,13 @@ FastAPI service for the AstroHealth MVP. Response shapes follow
 - BACKEND-02 (#7): contract models (`app/models/`) and SQLite storage
   (`app/database/`) with seed and reset commands.
 
-Not implemented yet: astronaut/readings/journal/summary/alerts endpoints and the
-HTTP error envelope (#8), CSV import and replay (#9), baselines and analysis
-(#14), alert rules (#15), and authentication. The API does not open the
-database yet; only the commands below and the tests use it.
+- BACKEND-03 (#8): persisted astronaut/readings/journal/summary/alerts routes,
+  independent latest metric snapshots, observation cutoffs and normalized errors.
+
+Not implemented: CSV import/replay (#9), calculated baselines/trends (#14),
+alert evaluation/rules (#15), authentication or deployment. Startup initializes
+missing tables without seeding, resetting or deleting existing data. Each
+request opens/closes its own SQLite connection with foreign keys enabled.
 
 ### Requirements
 
@@ -62,7 +65,7 @@ allowed origin is `http://localhost:5173`. The wildcard `*` is rejected at
 startup.
 
 ```powershell
-$env:ASTROHEALTH_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
+$env:ASTROHEALTH_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5175,http://localhost:5176"
 ```
 
 ### Checks (from the `backend` folder)
@@ -92,7 +95,7 @@ commit them.
 | --- | --- |
 | `init` | Creates the tables if they are missing. Existing data is kept. |
 | `seed` | Runs `init`, then loads `docs/examples/mission_seed.json`: one source, two fictional astronauts, and seven days of readings and journal entries for `AST-001`. It is all-or-nothing and can be repeated; note that it rewrites the seeded journal days with the seed values. |
-| `reset` | Deletes the database file (and its `-journal`, `-wal`, `-shm` files), then runs `init` and `seed`. The result is always the same rows and IDs. It refuses to delete a file that is not a SQLite database. Stop the API first: Windows cannot delete an open file. |
+| `reset` | Prepares and validates a seeded temporary database before replacing an identified AstroHealth database. Refuses unknown/foreign files, ambiguous paths, links and any `-journal`/`-wal`/`-shm` sidecars. Never deletes sidecars. Stop all database clients and let SQLite close/checkpoint normally first. Preparation failure preserves the previous database. |
 
 To use another file for one session:
 
@@ -114,8 +117,8 @@ mission day, `source_type`, and `source_id`; readings also keep
 | Journal | astronaut, `mission_day` | The entry is replaced and keeps its `journal_id`. An entry cannot move to another day. |
 | Alert | astronaut, `rule_id`, `rule_version`, `indicator`, timestamp | The alert is updated and keeps its `alert_id`; this is how it becomes resolved. |
 
-Timestamps must be UTC and end in `Z`, with seconds and up to six fractional
-digits. Equivalent forms such as `12:00:00Z` and `12:00:00.000Z` are the same
+Timestamps must be UTC and end in `Z`, with seconds and optional fractional
+digits of arbitrary length, preserved without rounding. Equivalent forms such as `12:00:00Z` and `12:00:00.000Z` are the same
 key. A missing value is stored as `NULL` and read back as `null`; it is never
 replaced by `0` or by an earlier value.
 
@@ -127,14 +130,85 @@ timestamp, and known astronaut and source references. A heart rate of 250 is
 stored like any other value. Deciding whether a value deserves attention
 belongs to the analysis and alert issues (#14, #15).
 
-### How the journal will join the summary (#8)
+### How the journal joins the summary (#8)
 
 Journal entries and vital readings are separate tables with different cadence.
-In `latest_metrics`, `sleep_hours_last_night` and `mood_score` will come from
+In `latest_metrics`, `sleep_hours_last_night` and `mood_score` come from
 the journal, and the three vital metrics from readings. Each metric is chosen
 independently as its latest non-null value, and keeps its own timestamp,
-mission day, provenance, and record ID. This issue only stores the data needed
-for that; the summary itself is not implemented.
+mission day, provenance, and record ID. Raw histories retain nulls and gaps.
+
+### REST API and demo
+
+| Method | Route | Success |
+| --- | --- | --- |
+| GET | `/api/health` | 200 |
+| GET | `/api/astronauts` | 200, paginated profiles |
+| GET / POST | `/api/astronauts/{id}/readings` | 200 list/retry; 201 create |
+| GET / POST | `/api/astronauts/{id}/journal` | 200 list/correction/retry; 201 create |
+| GET | `/api/astronauts/{id}/summary` | 200, independent snapshots |
+| GET | `/api/astronauts/{id}/alerts` | 200, empty unevaluated collection |
+
+Lists accept `limit` (1–1000, default 100) and `offset` (>=0, default 0).
+Histories/alerts also accept inclusive `from_day`/`to_day` inside the mission.
+Reversed bounds are invalid. Histories, summary and alerts accept `as_of`:
+UTC ending in Z, within the mission. Without it the latest persisted reading
+or journal timestamp is used, or null for an empty profile. Records after that
+cutoff are excluded; each snapshot retains its own original time and ID.
+Profiles sort by ID; readings/journal by timestamp then generated ID ascending.
+Alerts additionally accept `status=active|resolved`. List totals are counted
+after filtering and before pagination. Errors never mean an empty history.
+
+All successes use `data/meta`; all errors use `error/meta`, with
+`error.code`, `message` and `details[{field,message}]`. Codes: 404
+`ASTRONAUT_NOT_FOUND` for missing profiles, 404 `NOT_FOUND` for unknown routes,
+405 `METHOD_NOT_ALLOWED`, 409 `READING_CONFLICT`, 422 `VALIDATION_ERROR`
+(fields prefixed `body.*`/`query.*`), and generic 500 `INTERNAL_ERROR`.
+Health/profiles use `meta.as_of=null`. POST responses use the effective latest
+observation cutoff, so their data passes the frontend's `matchesView` guard.
+
+Baselines use `not_implemented`, null values/context/method/windows and zero
+samples until #14. Alerts use `not_implemented`, `data=[]`, `total=0`;
+summary active count/severity are null and recent alerts empty until #15.
+An empty unevaluated alert list is not an all-clear.
+
+Disposable demo from `backend` (stop this demo server before another reset):
+
+```powershell
+$env:ASTROHEALTH_DB_PATH = Join-Path $env:TEMP ("astrohealth-demo-" + [guid]::NewGuid().ToString('N') + ".db")
+..\.venv\Scripts\python.exe -m app.database reset
+..\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8001
+```
+
+In another PowerShell, from the repository root with frontend dependencies
+already installed:
+
+```powershell
+cd frontend
+$env:VITE_DATA_SOURCE = "api"
+$env:VITE_API_BASE_URL = "http://127.0.0.1:8001"
+$env:VITE_JOURNAL_SOURCE_ID = "SYN-CORE-001"
+$env:VITE_JOURNAL_TIME_UTC = "08:00:00"
+npm run dev -- --port 5173
+```
+
+The last two settings enable new journal entries with explicit synthetic
+source/effective UTC time. They are demo metadata, not wall-clock observations.
+Do not use the disposable reset procedure on a working database.
+
+Read-only health probe: from `frontend`, `npm run check:health -- http://127.0.0.1:8001`
+requires existing Vite dependencies. For Node 22.13+ without frontend installs,
+from `backend`, `node scripts/check_frontend_api.mjs http://127.0.0.1:8001`
+loads the unchanged frontend client/guards in memory and performs synthetic
+writes; use a freshly seeded disposable database only. This is transport and
+persistence evidence, not a browser/UI test.
+
+Known fixture discrepancy: `summary_before_analysis_is_implemented` gives
+`measurement_context="rest"` for pending vital baselines. The #8 brief requires
+all pending baseline contexts null. This API follows that brief; tests and
+OpenAPI examples explicitly account for these three fields. Shared fixtures
+and the contract remain unchanged. Six strict xfails cover only #14/#15 analysis
+examples; their non-analysis fields are tested separately.
 
 ## Español
 
@@ -144,10 +218,13 @@ for that; the summary itself is not implemented.
 - BACKEND-02 (#7): modelos del contrato (`app/models/`) y almacenamiento SQLite
   (`app/database/`) con comandos de semilla y reinicio.
 
-Todavía sin implementar: endpoints de astronautas/readings/journal/summary/alerts
-y el sobre de errores HTTP (#8), importación CSV y replay (#9), baselines y
-análisis (#14), reglas de alertas (#15) y autenticación. La API aún no abre la
-base de datos; solo la usan los comandos siguientes y las pruebas.
+- BACKEND-03 (#8): endpoints persistidos, snapshots independientes por métrica,
+  cortes de observación y errores normalizados.
+
+Sin implementar: importación CSV/replay (#9), cálculo de baselines/tendencias
+(#14), reglas/evaluación de alertas (#15), autenticación y despliegue. El arranque
+crea tablas faltantes sin sembrar, reiniciar ni borrar datos. Cada petición abre
+y cierra su conexión SQLite con claves foráneas activadas.
 
 ### Requisitos
 
@@ -192,7 +269,7 @@ Si no está definida o está vacía, el único origen permitido es
 `http://localhost:5173`. El comodín `*` se rechaza al arrancar.
 
 ```powershell
-$env:ASTROHEALTH_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
+$env:ASTROHEALTH_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5175,http://localhost:5176"
 ```
 
 ### Comprobaciones (desde la carpeta `backend`)
@@ -222,7 +299,7 @@ actual. Los archivos de base de datos están excluidos de git; no los subas.
 | --- | --- |
 | `init` | Crea las tablas si faltan. Conserva los datos existentes. |
 | `seed` | Ejecuta `init` y carga `docs/examples/mission_seed.json`: una fuente, dos astronautas ficticios y siete días de lecturas y diario para `AST-001`. Es todo o nada y se puede repetir; ten en cuenta que reescribe los días de diario de la semilla con sus valores. |
-| `reset` | Elimina el archivo de la base (y sus archivos `-journal`, `-wal`, `-shm`) y ejecuta `init` y `seed`. El resultado son siempre las mismas filas e IDs. Se niega a borrar un archivo que no sea una base SQLite. Detén antes la API: Windows no puede borrar un archivo abierto. |
+| `reset` | Prepara y valida una base temporal sembrada antes de sustituir una base identificada como AstroHealth. Rechaza archivos ajenos/desconocidos, rutas ambiguas, enlaces y cualquier `-journal`/`-wal`/`-shm`. Nunca borra esos auxiliares. Detén todos los clientes y deja que SQLite cierre/checkpoint normalmente. Un fallo de preparación conserva la base anterior. |
 
 Para usar otro archivo durante una sesión:
 
@@ -244,8 +321,8 @@ día de misión, `source_type` y `source_id`; las lecturas conservan además
 | Diario | astronauta, `mission_day` | La entrada se reemplaza y conserva su `journal_id`. Una entrada no puede moverse a otro día. |
 | Alerta | astronauta, `rule_id`, `rule_version`, `indicator`, timestamp | La alerta se actualiza y conserva su `alert_id`; así pasa a resuelta. |
 
-Los timestamps deben ser UTC y terminar en `Z`, con segundos y hasta seis
-dígitos de fracción. Formas equivalentes como `12:00:00Z` y `12:00:00.000Z` son
+Los timestamps deben ser UTC y terminar en `Z`, con segundos y fracciones
+opcionales de cualquier longitud, conservadas sin redondear. Formas equivalentes como `12:00:00Z` y `12:00:00.000Z` son
 la misma clave. Un valor ausente se guarda como `NULL` y se lee como `null`;
 nunca se sustituye por `0` ni por un valor anterior.
 
@@ -257,11 +334,78 @@ misión coincida con el timestamp y que el astronauta y la fuente existan. Una
 frecuencia cardíaca de 250 se guarda como cualquier otro valor. Decidir si un
 valor merece atención corresponde a los issues de análisis y alertas (#14, #15).
 
-### Cómo se unirá el diario al summary (#8)
+### Cómo se une el diario al summary (#8)
 
 Las entradas de diario y las lecturas vitales son tablas separadas con cadencia
-distinta. En `latest_metrics`, `sleep_hours_last_night` y `mood_score` vendrán
+distinta. En `latest_metrics`, `sleep_hours_last_night` y `mood_score` vienen
 del diario, y las tres métricas vitales de las lecturas. Cada métrica se elige
 de forma independiente como su último valor no nulo y conserva su propio
-timestamp, día de misión, procedencia e ID de registro. Este issue solo guarda
-los datos necesarios para ello; el summary no está implementado.
+timestamp, día de misión, procedencia e ID de registro. Las historias crudas
+conservan sus null y huecos.
+
+### API REST y demo
+
+Endpoints disponibles: `GET /api/health`, `GET /api/astronauts`,
+`GET/POST /api/astronauts/{id}/readings`, `GET/POST .../journal`,
+`GET .../summary` y `GET .../alerts`. Los GET devuelven 200; los POST devuelven
+201 al crear, 200 al reenviar una lectura idéntica o corregir/reenviar un diario.
+Una lectura con la misma clave y valores distintos devuelve 409 sin sobrescribir.
+Los IDs los genera el backend; los reintentos y las referencias conservan esa identidad.
+
+Listas: `limit` entero 1–1000 (100 por defecto), `offset` >=0 (0 por defecto).
+Historias/alertas: `from_day` y `to_day` inclusivos dentro de la misión, sin
+inversión. Historias, summary y alertas aceptan `as_of` UTC terminado en Z,
+dentro de la misión. Ausente: último timestamp persistido de lectura o diario
+del perfil; null si no hay observaciones. Nunca se incluyen registros futuros.
+Cada snapshot mantiene su fecha original. Perfiles se ordenan por ID; lecturas
+y diario por timestamp e ID ascendente. Alertas aceptan `status=active|resolved`.
+Los totales se calculan después de filtrar y antes de paginar.
+
+Éxitos: `data/meta`. Errores: `error/meta`, con `code`, `message` y
+`details[{field,message}]`. Códigos: 404 `ASTRONAUT_NOT_FOUND` solo para perfiles
+inexistentes; 404 `NOT_FOUND` para rutas inexistentes; 405 `METHOD_NOT_ALLOWED`;
+409 `READING_CONFLICT`; 422 `VALIDATION_ERROR` con campos `body.*`/`query.*`;
+500 `INTERNAL_ERROR` genérico, sin trazas. Health y perfiles usan `as_of=null`.
+Los POST usan el corte efectivo de la última observación, compatible con
+`matchesView` del cliente. Un error nunca se convierte en historia vacía.
+
+Hasta #14, los baselines usan `not_implemented`, valor/contexto/método/ventanas
+null y cero muestras. Hasta #15, las alertas usan `not_implemented`, colección
+vacía y total cero; el summary mantiene conteo/severidad null y alertas recientes
+vacías. Eso expresa evaluación pendiente, no ausencia comprobada de alertas.
+
+Demo desechable desde `backend`, sin tocar una base de trabajo:
+
+```powershell
+$env:ASTROHEALTH_DB_PATH = Join-Path $env:TEMP ("astrohealth-demo-" + [guid]::NewGuid().ToString('N') + ".db")
+..\.venv\Scripts\python.exe -m app.database reset
+..\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8001
+```
+
+En otra consola, desde la raíz, con dependencias frontend ya instaladas:
+
+```powershell
+cd frontend
+$env:VITE_DATA_SOURCE = "api"
+$env:VITE_API_BASE_URL = "http://127.0.0.1:8001"
+$env:VITE_JOURNAL_SOURCE_ID = "SYN-CORE-001"
+$env:VITE_JOURNAL_TIME_UTC = "08:00:00"
+npm run dev -- --port 5173
+```
+
+Fuente y hora son metadatos sintéticos explícitos para crear diarios, no datos
+del reloj actual. Detén el servidor antes de repetir un reset. Para otros puertos
+frontend, añade el origen exacto a `ASTROHEALTH_CORS_ORIGINS`, sin `*`.
+
+Sonda de health desde `frontend`: `npm run check:health -- http://127.0.0.1:8001`
+(requiere Vite instalado). Alternativa desde `backend`, con Node 22.13+ y sin
+instalar frontend: `node scripts/check_frontend_api.mjs http://127.0.0.1:8001`.
+Carga el cliente y guards originales en memoria y escribe observaciones
+sintéticas: úsala solo contra una base temporal recién sembrada. No prueba la UI.
+
+Contradicción conocida: el caso `summary_before_analysis_is_implemented` usa
+`measurement_context="rest"` en sus tres baselines vitales pendientes, pero el
+encargo #8 exige null en todos ellos. La API sigue el encargo; las pruebas y los
+ejemplos OpenAPI explicitan esta diferencia de tres campos. No se cambian el
+contrato ni los fixtures compartidos. Los seis xfail estrictos corresponden
+únicamente a análisis #14/#15; sus campos ajenos al análisis se prueban aparte.
