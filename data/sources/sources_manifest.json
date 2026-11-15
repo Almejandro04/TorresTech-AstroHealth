@@ -1,0 +1,47 @@
+{
+  "accessed": "2026-11-15",
+  "sources": [
+    {
+      "source_id": "PHYSIONET-BIDMC-1.0.0",
+      "source_type": "terrestrial_biomedical",
+      "title": "BIDMC PPG and Respiration Dataset v1.0.0",
+      "url": "https://physionet.org/content/bidmc/1.0.0/",
+      "files_url": "https://physionet.org/files/bidmc/1.0.0/bidmc_csv/",
+      "checksums_url": "https://physionet.org/files/bidmc/1.0.0/SHA256SUMS.txt",
+      "doi": "10.13026/C2208R",
+      "license": "Open Data Commons Attribution License v1.0 (ODC-By)",
+      "access": "open",
+      "population": "Terrestrial critically ill patients, Beth Israel Deaconess Medical Center (Boston); derived from the MIMIC II matched waveform database; 53 recordings of ~8 min",
+      "variables": ["HR", "PULSE", "RESP", "SpO2"],
+      "selected_subjects": ["bidmc_01", "bidmc_02", "bidmc_03"],
+      "selected_files": ["bidmc_##_Numerics.csv", "bidmc_##_Fix.txt"],
+      "citations": [
+        "PhysioNet BIDMC PPG and Respiration Dataset v1.0.0. DOI 10.13026/C2208R.",
+        "Pimentel MAF et al. Towards a Robust Estimation of Respiratory Rate from Pulse Oximeters. IEEE Trans Biomed Eng. 2016;64(8):1914-1923. DOI 10.1109/TBME.2016.2613124.",
+        "Pollard T, Moody BE, Lehman L, Gow B, Fernandes C, Xie C, Johnson A, Mark RG, Heldt T. PhysioNet as a global platform for biomedical research. Nature Health (2026). DOI 10.1038/s44360-026-00096-z."
+      ],
+      "use": "Processed subset in data/processed/bidmc_subset/. Never loaded into astronaut routes and never relabeled as astronaut data.",
+      "label": "[TERRESTRIAL-CLINICAL]"
+    },
+    {
+      "source_id": "SYN-AH-MISSION-001",
+      "source_type": "synthetic",
+      "title": "AstroHealth synthetic 30-day mission",
+      "generator": "data/scripts/generate_synthetic_mission.py",
+      "seed": 2026,
+      "outputs": "data/synthetic/",
+      "use": "Fictional astronauts AST-101, AST-102 and AST-2xx fixtures; importable with the backend CLI.",
+      "is_clinically_validated": false,
+      "label": "[SIMULATION-ASSUMPTION]"
+    },
+    {
+      "source_id": "SYN-CORE-001",
+      "source_type": "synthetic",
+      "title": "CORE-01 contract fixtures",
+      "outputs": "docs/examples/mission_seed.json",
+      "use": "Seven-day contract seed for AST-001 and AST-002; unchanged by the data tasks.",
+      "is_clinically_validated": false,
+      "label": "[SIMULATION-ASSUMPTION]"
+    }
+  ]
+}

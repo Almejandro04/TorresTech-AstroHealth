@@ -111,6 +111,8 @@ The UI reads through one typed interface, so transport selection does not replac
 
 ## Data, evidence and limitations
 
+- [Data sources, evidence and citations](docs/data_sources.md).
+
 - [Accepted API/data contract v0.1.0](docs/api_contract.md), [shared examples](docs/examples/api_examples.json), [seed manifest](docs/examples/mission_seed.json), [readings CSV](docs/examples/readings.csv), [journal CSV](docs/examples/journal.csv).
 - [UX requirements](docs/ux_requirements.md), [Flight Log rationale and captures](docs/design/redesign_rationale.md), [acceptance evidence](docs/testing/frontend_acceptance.md).
 - Scientific dictionary/source selection remain [#4](https://github.com/Almejandro04/TorresTech-AstroHealth/issues/4) and [#5](https://github.com/Almejandro04/TorresTech-AstroHealth/issues/5). No real biomedical source/license has been selected in main yet.

@@ -1,0 +1,84 @@
+{
+  "source_id": "PHYSIONET-BIDMC-1.0.0",
+  "source_type": "terrestrial_biomedical",
+  "dataset": "PhysioNet BIDMC PPG and Respiration Dataset v1.0.0",
+  "doi": "10.13026/C2208R",
+  "url": "https://physionet.org/content/bidmc/1.0.0/",
+  "license": "Open Data Commons Attribution License v1.0 (ODC-By)",
+  "attribution": "Contains data from the PhysioNet BIDMC PPG and Respiration Dataset v1.0.0 (ODC-By v1.0).",
+  "citations": [
+    "PhysioNet BIDMC PPG and Respiration Dataset v1.0.0. DOI 10.13026/C2208R.",
+    "Pimentel MAF et al. Towards a Robust Estimation of Respiratory Rate from Pulse Oximeters. IEEE Trans Biomed Eng. 2016;64(8):1914-1923. DOI 10.1109/TBME.2016.2613124.",
+    "Pollard T, Moody BE, Lehman L, Gow B, Fernandes C, Xie C, Johnson A, Mark RG, Heldt T. PhysioNet as a global platform for biomedical research. Nature Health (2026). DOI 10.1038/s44360-026-00096-z."
+  ],
+  "population": "Terrestrial critically ill ICU patients; not astronauts and never loaded as astronaut data.",
+  "script": "data/scripts/normalize_bidmc.py",
+  "script_version": "1.0.0",
+  "parameters": {
+    "window_s": 60,
+    "min_valid_s": 30,
+    "aggregate": "median"
+  },
+  "column_mapping": {
+    "Time [s]": "elapsed_s",
+    "HR": "heart_rate_bpm",
+    "PULSE": "pulse_rate_bpm",
+    "RESP": "respiratory_rate_bpm",
+    "SpO2": "spo2_percent"
+  },
+  "subjects": {
+    "bidmc:01": {
+      "age": 88,
+      "sex": "M"
+    },
+    "bidmc:02": {
+      "age": 65,
+      "sex": "M"
+    },
+    "bidmc:03": {
+      "age": 46,
+      "sex": "F"
+    }
+  },
+  "inputs": [
+    {
+      "file": "bidmc_01_Numerics.csv",
+      "sha256": "27d43794cf2e7150db10e8bfe61d2bfdb26873a8f1629ffc5fbee5c9a4eb6ef5",
+      "verified_against_acquisition": true
+    },
+    {
+      "file": "bidmc_01_Fix.txt",
+      "sha256": "5acedc860fdf03ac117b333bc0ef6b6579fe066382ba89abfd14ccc863b83831",
+      "verified_against_acquisition": true
+    },
+    {
+      "file": "bidmc_02_Numerics.csv",
+      "sha256": "99aef20b2846815d45ecde184da753de58c8a85b7dd7af74a2f4c5282013704d",
+      "verified_against_acquisition": true
+    },
+    {
+      "file": "bidmc_02_Fix.txt",
+      "sha256": "d201db17781166b11c865c64bfc0c2a2f292d66462f9f5ff5a666a25aa7ecb24",
+      "verified_against_acquisition": true
+    },
+    {
+      "file": "bidmc_03_Numerics.csv",
+      "sha256": "6666475c072fe079f35f1fffe0890a97b56d1086985f8a5d76a23b88eb6c6036",
+      "verified_against_acquisition": true
+    },
+    {
+      "file": "bidmc_03_Fix.txt",
+      "sha256": "1dabc778bfd78ca9507e2090a8a3dd64ea431a2b400df947c5f36185ccc70c71",
+      "verified_against_acquisition": true
+    }
+  ],
+  "checksums_sha256": "e28756681318a18d9c682a68cdff65efcaccb3ece40cfccd380540b77a3fdd6d",
+  "timebase_policy": "Elapsed seconds from the start of each recording, aggregated into windows. No UTC timestamps or mission days are created; source dates are shifted by de-identification and are not real.",
+  "measurement_context_policy": "unknown: ICU bedside monitor in a non-standardized situation, not a protocol resting measurement.",
+  "missing_value_policy": "NaN and unparseable cells become null. HR, PULSE or RESP <= 0 and SpO2 outside 0-100 become null as shape failures (not clinical outliers). Rows with no values and duplicate elapsed seconds (first kept) are rejected. A window variable is null with fewer than min_valid_s valid seconds.",
+  "outputs": [
+    "numerics_1min.csv",
+    "manifest.json",
+    "quality_report.json"
+  ]
+}

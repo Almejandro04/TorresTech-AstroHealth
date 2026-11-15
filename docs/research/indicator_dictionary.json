@@ -1,0 +1,127 @@
+{
+  "schema_version": "0.1.0",
+  "accessed": "2026-11-15",
+  "purpose": "Educational indicator dictionary for a fictional-mission prototype. Not a diagnostic system; defines no medical thresholds.",
+  "labels": {
+    "[EVIDENCE-SPACEFLIGHT]": "Published evidence about spaceflight",
+    "[TERRESTRIAL-CLINICAL]": "Terrestrial clinical reference",
+    "[SIMULATION-ASSUMPTION]": "Assumption introduced only for the fictional mission"
+  },
+  "indicators": [
+    {
+      "field": "heart_rate_bpm",
+      "entity": "HealthReading",
+      "definition": "Heartbeats per minute in a point-in-time observation.",
+      "unit": "beats/min",
+      "scale": "number > 0",
+      "contexts": ["rest", "exercise", "sleep", "unknown"],
+      "sampling": "Compare only within the same measurement_context; the system baseline uses rest only. One resting reading per day at a similar time in the synthetic mission.",
+      "spaceflight_relevance": "[EVIDENCE-SPACEFLIGHT] Night-time HR unchanged on the ISS (S4); HR unchanged while cardiac output increased (S5); the challenge mentions cardiovascular events (S1). Real monitoring with Bio-Monitor (S14).",
+      "terrestrial_reference": "[TERRESTRIAL-CLINICAL] 60-100 per minute in healthy adults (S15).",
+      "sources": ["S1", "S4", "S5", "S14", "S15"],
+      "limitations": "Changes with exercise, sleep, stress, medication and posture; 60-100 is a general terrestrial reference, not a threshold for astronauts; do not infer arrhythmias or diagnoses.",
+      "baseline_support": "baseline_and_trend",
+      "baseline_note": "rest readings only",
+      "in_contract": true
+    },
+    {
+      "field": "spo2_percent",
+      "entity": "HealthReading",
+      "definition": "Peripheral oxygen saturation estimated by pulse oximetry.",
+      "unit": "%",
+      "scale": "0-100",
+      "contexts": ["rest", "exercise", "sleep", "unknown"],
+      "sampling": "Same position and context; compare within the person.",
+      "spaceflight_relevance": "[EVIDENCE-SPACEFLIGHT] The 8.2 psia / 34% O2 exploration atmosphere introduces mild hypoxia (S8); in chamber tests there was no appreciable impact on SpO2 with mild exercise (S9).",
+      "terrestrial_reference": "[TERRESTRIAL-CLINICAL] 96-100% at rest; may be lower at altitude or with some conditions (S16).",
+      "sources": ["S8", "S9", "S16"],
+      "limitations": "Sensor error, motion and perfusion; narrow range, small changes; not a diagnosis of hypoxia.",
+      "baseline_support": "baseline_and_trend",
+      "baseline_note": "cautious interpretation: small variation",
+      "in_contract": true
+    },
+    {
+      "field": "respiratory_rate_bpm",
+      "entity": "HealthReading",
+      "definition": "Breaths per minute.",
+      "unit": "breaths/min",
+      "scale": "number > 0",
+      "contexts": ["rest", "exercise", "sleep", "unknown"],
+      "sampling": "Count at rest for 1 minute (S15); do not mix with exercise or sleep.",
+      "spaceflight_relevance": "[EVIDENCE-SPACEFLIGHT] The breathing pattern changes in microgravity (more abdominal contribution; lower tidal volume) (S6, S7); an increase of ~9% appears in a review without a confirmed primary source (S7).",
+      "terrestrial_reference": "[TERRESTRIAL-CLINICAL] 12-16 per minute (S15) or 12-20 per minute (S16).",
+      "sources": ["S6", "S7", "S15", "S16"],
+      "limitations": "Terrestrial references differ between sources; device estimation varies; small samples in spaceflight studies.",
+      "baseline_support": "baseline_and_trend",
+      "baseline_note": "rest readings only",
+      "in_contract": true
+    },
+    {
+      "field": "sleep_hours_last_night",
+      "entity": "HealthJournal",
+      "definition": "Hours of sleep in the previous period, self-reported in the journal.",
+      "unit": "hours",
+      "scale": "0-24; 0 is a reported value",
+      "contexts": [],
+      "sampling": "One entry per mission day; self-report.",
+      "spaceflight_relevance": "[EVIDENCE-SPACEFLIGHT] Mean in-flight sleep ~6.0 h (5.96 shuttle; 6.09 ISS) with 8.5 h scheduled (S3); stress and tiredness increase in the second half of 6-month missions (S12, preliminary).",
+      "terrestrial_reference": null,
+      "sources": ["S3", "S12"],
+      "limitations": "Self-report is less precise than actigraphy (S3 used both); does not measure sleep quality.",
+      "baseline_support": "baseline_and_trend",
+      "baseline_note": "daily journal series",
+      "in_contract": true
+    },
+    {
+      "field": "mood_score",
+      "entity": "HealthJournal",
+      "definition": "Self-reported mood of the day.",
+      "unit": "score",
+      "scale": "integer 1-5: very low, low, neutral, high, very high",
+      "contexts": [],
+      "sampling": "Once a day in the journal; no preselected value.",
+      "spaceflight_relevance": "[EVIDENCE-SPACEFLIGHT] NASA BHP uses mood self-reports and the 37-item POMS as standard measures (S10); behavioral risk documented by HRP (S11).",
+      "terrestrial_reference": null,
+      "sources": ["S10", "S11"],
+      "limitations": "[SIMULATION-ASSUMPTION] The product's 1-5 scale is NOT the POMS nor a validated clinical scale; ordinal: do not average.",
+      "baseline_support": "descriptive_only",
+      "baseline_note": "ordinal; never averaged",
+      "in_contract": true
+    },
+    {
+      "field": "perceived_fatigue",
+      "entity": null,
+      "definition": "Self-reported perceived tiredness (optional, outside contract v0.1.0).",
+      "unit": null,
+      "scale": "not defined in v0.1.0",
+      "contexts": [],
+      "sampling": "Documented only; not implemented.",
+      "spaceflight_relevance": "[EVIDENCE-SPACEFLIGHT] Tiredness appears in S12, and S3 mentions fatigue as a common complaint.",
+      "terrestrial_reference": null,
+      "sources": ["S3", "S12"],
+      "limitations": "There is no contract field; it needs a team decision and a defined scale.",
+      "baseline_support": "not_applicable",
+      "baseline_note": "out of scope",
+      "in_contract": false
+    }
+  ],
+  "do_not_aggregate": [
+    "Readings from different contexts (rest, exercise, sleep, unknown) in one baseline or trend.",
+    "Different astronauts, or synthetic with terrestrial data.",
+    "mood_score averages (ordinal), or mood presented as a clinical measure.",
+    "null converted to 0: a missing value is neither a normal nor an abnormal result.",
+    "Terrestrial ranges used as criteria for astronauts.",
+    "Sleep (daily journal) and vitals (point-in-time readings) in one series.",
+    "Environmental data (S21) treated as individual physiological measurements."
+  ],
+  "experimental_rules": [
+    {
+      "rule_id": "DEMO-HR-CHANGE",
+      "rule_version": "fixture-1",
+      "summary": "Resting heart-rate daily mean >= baseline + 5 beats/min on 2 consecutive days after the reference window.",
+      "label": "[SIMULATION-ASSUMPTION]",
+      "supporting_sources": [],
+      "docs": ["docs/architecture/alert_rules.md", "docs/architecture/analysis.md"]
+    }
+  ]
+}

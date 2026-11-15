@@ -1,0 +1,113 @@
+{
+  "subjects": {
+    "bidmc:01": {
+      "rows_read": 481,
+      "rows_rejected": {
+        "invalid_time": 0,
+        "duplicate_elapsed_s": 0,
+        "no_values": 0
+      },
+      "unparseable_values_set_null": {
+        "heart_rate_bpm": 0,
+        "pulse_rate_bpm": 0,
+        "respiratory_rate_bpm": 0,
+        "spo2_percent": 0
+      },
+      "shape_failures_set_null": {
+        "heart_rate_bpm": 0,
+        "pulse_rate_bpm": 0,
+        "respiratory_rate_bpm": 0,
+        "spo2_percent": 0
+      },
+      "rows_accepted": 481,
+      "null_values_in_accepted_rows": {
+        "heart_rate_bpm": 0,
+        "pulse_rate_bpm": 13,
+        "respiratory_rate_bpm": 0,
+        "spo2_percent": 13
+      },
+      "windows_generated": 9,
+      "windows_with_all_variables_null": 1
+    },
+    "bidmc:02": {
+      "rows_read": 481,
+      "rows_rejected": {
+        "invalid_time": 0,
+        "duplicate_elapsed_s": 0,
+        "no_values": 0
+      },
+      "unparseable_values_set_null": {
+        "heart_rate_bpm": 0,
+        "pulse_rate_bpm": 0,
+        "respiratory_rate_bpm": 0,
+        "spo2_percent": 0
+      },
+      "shape_failures_set_null": {
+        "heart_rate_bpm": 0,
+        "pulse_rate_bpm": 0,
+        "respiratory_rate_bpm": 0,
+        "spo2_percent": 0
+      },
+      "rows_accepted": 481,
+      "null_values_in_accepted_rows": {
+        "heart_rate_bpm": 0,
+        "pulse_rate_bpm": 0,
+        "respiratory_rate_bpm": 0,
+        "spo2_percent": 0
+      },
+      "windows_generated": 9,
+      "windows_with_all_variables_null": 1
+    },
+    "bidmc:03": {
+      "rows_read": 481,
+      "rows_rejected": {
+        "invalid_time": 0,
+        "duplicate_elapsed_s": 0,
+        "no_values": 0
+      },
+      "unparseable_values_set_null": {
+        "heart_rate_bpm": 0,
+        "pulse_rate_bpm": 0,
+        "respiratory_rate_bpm": 0,
+        "spo2_percent": 0
+      },
+      "shape_failures_set_null": {
+        "heart_rate_bpm": 0,
+        "pulse_rate_bpm": 0,
+        "respiratory_rate_bpm": 0,
+        "spo2_percent": 0
+      },
+      "rows_accepted": 481,
+      "null_values_in_accepted_rows": {
+        "heart_rate_bpm": 0,
+        "pulse_rate_bpm": 0,
+        "respiratory_rate_bpm": 0,
+        "spo2_percent": 0
+      },
+      "windows_generated": 9,
+      "windows_with_all_variables_null": 1
+    }
+  },
+  "totals": {
+    "rows_read": 1443,
+    "rows_accepted": 1443,
+    "windows_generated": 27,
+    "rows_rejected": {
+      "invalid_time": 0,
+      "duplicate_elapsed_s": 0,
+      "no_values": 0
+    },
+    "shape_failures_set_null": {
+      "heart_rate_bpm": 0,
+      "pulse_rate_bpm": 0,
+      "respiratory_rate_bpm": 0,
+      "spo2_percent": 0
+    },
+    "null_values_in_accepted_rows": {
+      "heart_rate_bpm": 0,
+      "pulse_rate_bpm": 13,
+      "respiratory_rate_bpm": 0,
+      "spo2_percent": 13
+    }
+  }
+}

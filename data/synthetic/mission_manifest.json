@@ -1,0 +1,33 @@
+{
+  "schema_version": "0.1.0",
+  "source": {
+    "source_id": "SYN-AH-MISSION-001",
+    "source_type": "synthetic",
+    "description": "Synthetic 30-day AstroHealth mission for fictional astronauts; not real astronaut or patient observations.",
+    "generator": "data/scripts/generate_synthetic_mission.py",
+    "generator_version": "1.0.0",
+    "command": "python data/scripts/generate_synthetic_mission.py --seed 2026 --start-date 2026-11-01",
+    "seed": 2026,
+    "schema_version": "0.1.0",
+    "scenario": "AST-101: stable days 1-5, isolated spike day 9, missing values days 12-14, sustained resting heart-rate change days 18-21, return day 22, recovery days 24-30. AST-102: days 1-3 only.",
+    "limitations": "Synthetic fictional mission. Values are simulation assumptions chosen inside published ranges and introduced changes; not a validated physiological model, not astronaut data and not clinically validated.",
+    "is_clinically_validated": false,
+    "planned_mission_days": 30
+  },
+  "astronauts": [
+    {
+      "astronaut_id": "AST-101",
+      "name": "Demo Astronaut 101",
+      "is_fictional": true,
+      "mission_start_date": "2026-11-01",
+      "planned_duration_days": 30
+    },
+    {
+      "astronaut_id": "AST-102",
+      "name": "Demo Astronaut 102",
+      "is_fictional": true,
+      "mission_start_date": "2026-11-01",
+      "planned_duration_days": 30
+    }
+  ]
+}
