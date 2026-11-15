@@ -17,7 +17,8 @@ FastAPI service for the AstroHealth MVP. Response shapes follow
 - BACKEND-03 (#8): persisted astronaut/readings/journal/summary/alerts routes,
   independent latest metric snapshots, observation cutoffs and normalized errors.
 
-Not implemented: CSV import/replay (#9), calculated baselines/trends (#14),
+BACKEND-06 (#9) adds local JSON/CSV ingestion and staged insertion by mission day.
+Not implemented: calculated baselines/trends (#14),
 alert evaluation/rules (#15), authentication or deployment. Startup initializes
 missing tables without seeding, resetting or deleting existing data. Each
 request opens/closes its own SQLite connection with foreign keys enabled.
@@ -221,7 +222,8 @@ examples; their non-analysis fields are tested separately.
 - BACKEND-03 (#8): endpoints persistidos, snapshots independientes por métrica,
   cortes de observación y errores normalizados.
 
-Sin implementar: importación CSV/replay (#9), cálculo de baselines/tendencias
+BACKEND-06 (#9) añade importación local JSON/CSV e inserción por día de misión.
+Sin implementar: cálculo de baselines/tendencias
 (#14), reglas/evaluación de alertas (#15), autenticación y despliegue. El arranque
 crea tablas faltantes sin sembrar, reiniciar ni borrar datos. Cada petición abre
 y cierra su conexión SQLite con claves foráneas activadas.
@@ -409,3 +411,157 @@ encargo #8 exige null en todos ellos. La API sigue el encargo; las pruebas y los
 ejemplos OpenAPI explicitan esta diferencia de tres campos. No se cambian el
 contrato ni los fixtures compartidos. Los seis xfail estrictos corresponden
 únicamente a análisis #14/#15; sus campos ajenos al análisis se prueban aparte.
+
+## Local ingestion and staged demo (#9) — English
+
+Run all backend commands from `backend`, using `..\.venv\Scripts\python.exe`.
+There is no upload endpoint, global simulation clock, scheduler, generated
+mission, or new replay route. This workflow inserts only the requested days;
+existing API `as_of` provides historical views after advancing.
+
+```powershell
+$env:ASTROHEALTH_DB_PATH = Join-Path $env:TEMP ("astrohealth-ingest-" + [guid]::NewGuid().ToString('N') + ".db")
+..\.venv\Scripts\python.exe -m app.database init
+..\.venv\Scripts\python.exe -m app.database import-json ..\docs\examples\mission_seed.json --until-day 3
+..\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8001
+```
+
+In another PowerShell from `backend`, set `ASTROHEALTH_DB_PATH` to the SAME
+absolute path printed by the previous command, then advance and repeat:
+
+```powershell
+..\.venv\Scripts\python.exe -m app.database import-json ..\docs\examples\mission_seed.json --until-day 5
+..\.venv\Scripts\python.exe -m app.database import-json ..\docs\examples\mission_seed.json --until-day 5
+Invoke-WebRequest 'http://127.0.0.1:8001/api/astronauts/AST-001/summary' -UseBasicParsing
+Invoke-WebRequest 'http://127.0.0.1:8001/api/astronauts/AST-001/readings?as_of=2026-11-03T23:59:59.999999999Z' -UseBasicParsing
+```
+
+Without `--until-day`, import the entire input. Day bounds are inclusive by
+validated mission_day (UTC date), so all fractions of the last day's seconds
+are included; the next day is excluded. All input records, including future
+ones, are validated against existing data before the selection is committed.
+A smaller requested day NEVER deletes later observations. The report lists
+`profiles_with_later_data`, warns about the later records and gives actual
+persisted cutoffs. Use `as_of` to query history. For a fresh staged run, use a
+NEW path + `init`; `reset` is an offline, explicit operation that loads the
+FULL seven-day seed, not an empty replay preparation. Preserve its existing
+ownership/link/sidecar protections and close all database clients first.
+
+CSV alternative (paths below are resolved relative to the manifest directory):
+
+```powershell
+..\.venv\Scripts\python.exe -m app.database import-csv ..\docs\examples\mission_seed.json --readings readings.csv --journal journal.csv --until-day 3
+```
+
+Minimal manifest: a JSON object containing exactly `schema_version`, `source`
+(one SourceManifestEntry) and `astronauts` (array of Astronaut). A complete
+mission_seed.json is also accepted as the CSV manifest: its `readings` and
+`journal` members are ignored and replaced exclusively by the two CSV inputs.
+Unknown other manifest fields are rejected. The manifest path itself is
+relative to the current directory; CSV paths are relative to its directory
+(or absolute). JSON bundle keys are exactly schema_version/source/astronauts/
+readings/journal. Metadata maps through SourceManifestEntry -> sources and
+Astronaut -> astronauts. Observations map through HealthReadingInput -> readings
+and HealthJournalInput -> journal after extracting astronaut_id. Server IDs
+are assigned by the existing repository; inputs do not supply record IDs.
+
+CSV is UTF-8 (BOM accepted), with the exact header names from shared examples
+in any order. Missing/duplicate/extra headers and short/long rows are errors.
+Empty cells become null only in nullable fields. Zero is a value; numeric
+`null`, `NaN`, `N/A`, infinity, boolean text and invalid integers are rejected.
+Notes remain text; no medical units/context are inferred or converted.
+
+Identical readings/journals and metadata are no-ops with stable IDs. Different
+reading values/provenance, profiles or source manifests cause conflict. A
+changed stored journal also conflicts by default, preserving API corrections.
+Use `--update-journal` ONLY for deliberate journal replacement (stable ID).
+Conflicting duplicates within an input still fail, even with that option.
+This does not change HTTP journal upsert or the existing seed command.
+
+Import is atomic for the entire bundle, including BOTH CSV files and metadata.
+A transaction plus a rolled-back validation savepoint checks the whole input,
+then publishes selected days under the same write lock. No executescript or
+commit runs inside that import transaction. Invalid input/conflicts preserve
+all previous rows. Error exit code is nonzero and no created rows are claimed.
+Reports are JSON: effective paths, format/version, requested/selected days,
+per-table created/repeated/updated counts, rejected bundle on failure, and
+file/CSV line or JSON index/field diagnostics. The first storage conflict stops
+the attempt; model validation can report several fields together.
+
+Only synthetic provenance is accepted; terrestrial_biomedical belongs to the
+separate DATA-03 workflow. Schema validity is not clinical normality.
+After COMMIT, `post_import` supplies declared profiles and actual persisted
+cutoffs as the small handoff point for future #14/#15 reevaluation. No callback
+or engine is run; evaluation_status remains not_implemented, independently of
+confirmed import. No fabricated alerts or baseline changes are introduced.
+
+Implementation checked with seven-day CORE-01 fixtures. Final validation with
+Ismael's DATA-04 dataset is pending; these files are not DATA-04. The #8 pending
+baseline rest/null discrepancy remains separate and unchanged by this issue.
+
+## Importación local y demo por etapas (#9) — Español
+
+Todos los comandos anteriores se ejecutan desde `backend`, con el Python de
+`.venv`. Crea una ruta NUEVA en TEMP y ejecuta `init`, después `import-json
+..\docs\examples\mission_seed.json --until-day 3`. Inicia Uvicorn en 8001.
+En otra consola configura la MISMA ruta absoluta y ejecuta el mismo comando
+con `--until-day 5`; repetirlo no cambia contenido ni IDs. Los bloques
+PowerShell anteriores son válidos también para este recorrido en español.
+
+También puedes ejecutar:
+
+```powershell
+..\.venv\Scripts\python.exe -m app.database import-csv ..\docs\examples\mission_seed.json --readings readings.csv --journal journal.csv --until-day 3
+```
+
+Manifiesto mínimo: objeto JSON con `schema_version`, `source` (una fuente) y
+`astronauts` (array de perfiles ficticios). Si usas el bundle completo como
+manifiesto, se ignoran sus arrays de observaciones JSON: SOLO se leen los dos
+CSV seleccionados. Se rechazan otras claves. La ruta del manifiesto es relativa
+al directorio actual; los CSV son relativos a su directorio o rutas absolutas.
+El bundle JSON completo exige además `readings` y `journal`, ambos arrays.
+
+Mapeo: source -> SourceManifestEntry -> sources; astronauts -> Astronaut ->
+astronauts; readings -> HealthReadingInput -> readings; journal ->
+HealthJournalInput -> journal. Se extrae astronaut_id antes de validar los
+Inputs; los IDs persistidos los genera el repositorio existente.
+
+CSV UTF-8 con BOM opcional, cabeceras exactas de los ejemplos en cualquier
+orden. Se rechazan cabeceras duplicadas/faltantes/desconocidas y filas con
+columnas de más o menos. Vacío equivale a null solo en campos anulables; 0 se
+conserva. No se convierten null/NaN/N/A/texto inválido en ausencia; tampoco se
+suponen unidades o contextos médicos. Las notas siguen siendo texto.
+
+La repetición idéntica es un no-op. Lecturas con la misma clave normalizada y
+valores/procedencia distintos causan conflicto. Tampoco se sobrescriben perfiles
+ni fuentes distintos. Un diario distinto del guardado causa conflicto por
+defecto para proteger correcciones de la API. `--update-journal` permite una
+corrección DELIBERADA conservando ID; duplicados contradictorios dentro del
+archivo siguen siendo error. No cambia el upsert HTTP ni la semilla existente.
+
+Se valida el bundle COMPLETO, incluidos registros posteriores al día pedido.
+La validación completa usa un savepoint revertido; después se publica solo la
+selección dentro de la misma transacción. Un fallo revierte toda escritura de
+ese intento, incluidos metadatos y ambos CSV. No hay commits/executescript
+internos que rompan la atomicidad. El informe JSON identifica entrada/destino,
+formato/versión, días pedidos/seleccionados, creados/repetidos/actualizados por
+tabla y errores con archivo/fila CSV o índice/campo JSON. Rechazo devuelve
+código distinto de cero sin atribuir creaciones que terminaron en rollback.
+
+El límite por día usa mission_day validado mediante fechas UTC: incluye TODAS
+las fracciones del último segundo del día y excluye el siguiente. Retroceder
+no borra nada: el informe advierte si ya hay observaciones posteriores y muestra
+el cutoff real. Para consultar historia usa `as_of`, como en el ejemplo HTTP.
+Para una demo limpia usa una ruta nueva + init; reset requiere todos los
+clientes detenidos y carga la semilla COMPLETA de siete días. No es un inicio
+vacío de replay. Se conservan sus protecciones de identidad, enlaces y auxiliares.
+
+Solo se admite synthetic; terrestrial_biomedical corresponde a DATA-03.
+No hay generación de una misión de 30 días, reloj global, scheduler, rutas
+nuevas, baselines ni reglas de alertas. Tras el COMMIT, `post_import` entrega
+perfiles y cutoffs persistidos para conectar #14/#15 posteriormente; no ejecuta
+un hook vacío ni declara análisis realizado. La API conserva not_implemented.
+
+Implementación comprobada con fixtures CORE-01 de 7 días.
+Validación final con el dataset DATA-04 de Ismael pendiente.
+La discrepancia rest/null de baselines permanece como pendiente separado.
