@@ -42,7 +42,7 @@ The Fetch adapter implements profiles, summary, vital/journal histories, alert f
 
 Mock journal changes last only for the current page session and reset on reload. New mock entries retain the fixture convention 08:00 UTC / SYN-CORE-001. API creates instead require explicit VITE_JOURNAL_SOURCE_ID and VITE_JOURNAL_TIME_UTC (HH:MM:SS), matching the imported mission and agreed effective observation time; otherwise new creates stay disabled with an explanation. Existing corrections preserve their original source/time.
 
-The backend now serves persisted profiles, readings, journal, summary and alerts, plus JSON/CSV import and staged days. The unchanged Fetch client passes eight real FastAPI/SQLite checks, including journal create/correct/retry and history refresh; restart persistence is verified. Run the root scripts/check_local_integration.py for an isolated repeatable smoke. #13/#17 remain open for rendered API workflow acceptance; #14/#15 still return explicit not_implemented analysis/alerts. The read-only check:health still proves only service health.
+The backend now serves persisted profiles, readings, journal, summary and alerts, plus JSON/CSV import and staged days. The unchanged Fetch client passes eight real FastAPI/SQLite checks, including journal create/correct/retry and history refresh; restart persistence is verified. Run the root scripts/check_local_integration.py for an isolated repeatable smoke. #13/#17 rendered API workflow acceptance is complete; #14/#15 still return explicit not_implemented analysis/alerts. The read-only check:health still proves only service health.
 
 The mock engine derives its data from docs/examples/mission_seed.json. npm run check:mocks verifies the shared examples and replay policies. scripts/fixture-api.mjs and serve-fixture-api.mjs are explicitly test-only HTTP shims for checking the transport, not the backend deliverable or a second production API.
 
@@ -64,8 +64,12 @@ See [the root README](../README.md), [demo runbook](../docs/demo_runbook.md) and
 | src/styles/ | Brand/semantic tokens, base controls, shell and views |
 | scripts/ | Contrast, mock/series/HTTP checks, real health probe and test-only HTTP fixture |
 
+## Rendered API acceptance
+
+See [browser acceptance and captures](../docs/testing/browser13_acceptance.md). The Journal confirmation lives outside the history-loading subtree, so a new entry changing the summary cutoff does not remove its confirmation/focus. API stop/retry, range/replay, creation/correction, reload persistence and light/dark were verified in the in-app browser.
+
 ## Review status and remaining work
 
 See the rationale for executed checks and the manual smoke sequence. The current build separates the recovery entry (approximately 228 kB) from the application chunk (563 kB), about 791 kB / 238 kB gzip total. Vite's 500 kB application-chunk warning is retained. Splitting chart code can be considered later rather than hiding the warning.
 
-Functional acceptance evidence for #10/#11/#12 is in [frontend_acceptance.md](../docs/testing/frontend_acceptance.md). Real HTTP storage and journal persistence are verified; API browser completion, generated alerts and full end-to-end testing (#21) remain separate. See the [current integration update](../docs/testing/integration_update_20261115.md). This prototype uses fictional synthetic records and experimental explanations, not medically validated diagnoses or NASA endorsement.
+Functional acceptance evidence for #10/#11/#12 is in [frontend_acceptance.md](../docs/testing/frontend_acceptance.md). Real HTTP storage, journal persistence and current API browser acceptance are verified. Actual generated alerts, DATA-04 and full end-to-end testing (#21) remain separate. See the [current integration update](../docs/testing/integration_update_20261115.md). This prototype uses fictional synthetic records and experimental explanations, not medically validated diagnoses or NASA endorsement.

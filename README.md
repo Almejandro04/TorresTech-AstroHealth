@@ -2,16 +2,16 @@
 
 An English-language educational prototype for monitoring a fictional astronaut mission. Flight Log displays vital observations, daily self-reports, individual reference comparisons and explainable experimental alerts.
 
-**Two explicit modes: the Flight Log mock demo and the real FastAPI/SQLite transport.** The backend now stores fictional profiles, readings and journal entries, exposes their REST endpoints, and supports atomic JSON/CSV import and staged mission days. Real Fetch-client, replay and restart-persistence checks pass with the seven-day contract seed. Browser completion, the DATA-04 mission and calculated baselines/alerts remain pending. This project is not a validated diagnostic system and is not affiliated with or endorsed by NASA.
+**Two explicit modes: the Flight Log mock demo and the real FastAPI/SQLite transport.** The backend now stores fictional profiles, readings and journal entries, exposes their REST endpoints, and supports atomic JSON/CSV import and staged mission days. Real Fetch-client, replay and restart-persistence checks pass with the seven-day contract seed. Current API/Journal browser acceptance is verified; DATA-04 and calculated baselines/alerts remain pending. This project is not a validated diagnostic system and is not affiliated with or endorsed by NASA.
 
 ## Current capabilities
 
 | Area | Available now | Remaining |
 | --- | --- | --- |
-| Dashboard | Five indicators with original timestamps/units/context/provenance; missing and earlier readings stay identifiable | Rendered API-value verification |
+| Dashboard | Five indicators with original timestamps/units/context/provenance; missing and earlier readings stay identifiable | Full DATA-04/analysis scenario |
 | Analytics | Vital and daily-journal charts, periods, individual reference, explicit gaps, accessible tables | Final cross-browser/accessibility review |
 | Alerts | Read-only list/detail, status and explanation; labeled extra presentation samples | Real backend rule engine |
-| Journal | Mock workflow and real HTTP create/correct/retry; SQLite persistence across restart verified | Complete the configured API browser workflow |
+| Journal | Mock workflow and real HTTP create/correct/retry; SQLite persistence across restart verified | Broader assistive/cross-browser review |
 | API | SQLite, profiles/readings/journal/summary/alerts routes, JSON/CSV import, staged days, explicit CORS, Swagger | Calculated references/trends and alert engine (#14/#15) |
 | Data | Seven-day contract seed, two fictional profiles, fixtures/CSV examples | Reproducible 30-day generator and real-data research/processing |
 
@@ -123,12 +123,16 @@ Use a separate checkout and personal task branch from current `main`. Commit and
 
 ## Application loading and consistent views
 
-The loading/recovery shell imports the application separately, so a rejected application chunk or connection configuration can show a reload action instead of leaving an empty root. Route/render errors have the same recovery frame; unsaved Journal changes may be lost on reload. Raw configuration values and stack traces are not displayed. These changes still require the pending rendered browser recheck.
+The loading/recovery shell imports the application separately, so a rejected application chunk or connection configuration can show a reload action instead of leaving an empty root. Route/render errors have the same recovery frame; unsaved Journal changes may be lost on reload. Raw configuration values and stack traces are not displayed. Loading/configuration recovery and the supported restart sequence are now browser-verified; see the acceptance evidence below.
 
 History, journal and alert requests share the displayed summary’s observation cutoff, including the latest view. A later reading appears after Refresh data advances that summary. Missing pages, repeated offsets or changing pagination totals are errors rather than partial history shown as complete.
+
+## Browser acceptance
+
+[Rendered API/Journal checks and captures](docs/testing/browser13_acceptance.md) cover staged import, filters/replay, offline/retry, persisted Journal create/correct and reload. A separate contract HTTP fixture verifies alert rendering readiness; actual generated alerts remain #15/#21.
 
 ## Integration and next steps
 
 [Integration smoke procedure](docs/architecture/integration_smoke_test.md) separates verified real transport/persistence from remaining browser/science checks. [Current integration results](docs/testing/integration_update_20261115.md) and [#13 recovery/cutoff update](docs/testing/frontend13_update.md) supersede the older bootstrap-only snapshot in the [historical autonomous report](docs/autonomous_progress.md).
 
-API view/Journal browser acceptance (#13/#17), full integration testing (#21), and the final end-to-end demo rehearsal (#22) remain open. The backend storage/routes/import dependency is delivered; DATA-04, analysis/rules and the browser review remain pending. The JavaScript bundle still exceeds Vite's advisory 500 kB threshold; the warning is visible rather than suppressed.
+Current API view/Journal acceptance (#13/#17) is complete. Full integration (#21) and final demo rehearsal (#22) remain open for DATA-04, actual analysis/rules, measured zoom and broader accessibility. The JavaScript bundle still exceeds Vite's advisory 500 kB threshold; the warning is visible rather than suppressed.

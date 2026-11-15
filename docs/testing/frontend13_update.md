@@ -1,5 +1,7 @@
 # FRONTEND-06 (#13) — recovery and observation consistency
 
+> Earlier non-browser snapshot. The later [browser acceptance](browser13_acceptance.md) completes the rendered #13/#17 checks and records the Journal confirmation fix; the pending-review statements below describe the earlier state.
+
 Baseline: main c1e113b6be82b580d96ab3d252e60b419755f949. Separate local checkout and branch codex/frontend-13-recovery-20261115. Flight Log composition/themes/tokens, the approved HTTP contract and shared source fixtures are preserved.
 
 ## Changes

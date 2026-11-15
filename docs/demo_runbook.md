@@ -2,7 +2,7 @@
 
 ## Scope and reproducibility
 
-There are two explicit rehearsals: the **frontend mock demonstration** below, and **real persisted API monitoring** using the seven-day contract seed. FastAPI/SQLite transport, staged replay and journal persistence pass the isolated smoke. The new API browser workflow remains pending review. Calculated baselines and generated alerts remain #14/#15; DATA-04 generation remains #6.
+There are two explicit rehearsals: the **frontend mock demonstration** below, and **real persisted API monitoring** using the seven-day contract seed. FastAPI/SQLite transport, staged replay and journal persistence pass the isolated smoke. The current API browser workflow is verified; see the acceptance record. Calculated baselines and generated alerts remain #14/#15; DATA-04 generation remains #6.
 
 A clean checkout, npm ci and npm run dev in frontend suffice. With no local override the source is mock. If a local API override exists, deliberately set VITE_DATA_SOURCE=mock and restart Vite. The UI must show Synthetic demo. Do not use the HTTP test fixture as evidence that the team's backend is complete.
 
@@ -46,6 +46,6 @@ For a shorter demo, omit the journal step. It is P1 and does not block the core 
 5. In another backend terminal configured with the SAME absolute database path, import through day 5, then choose Refresh data in Flight Log. Verify the new latest day and chart/table observations without losing the selected profile/range. Import through day 7 to show the missing respiratory value and retained earlier dashboard timestamp.
 6. For historical replay, select day 3 in Flight Log. For direct API consumers, pass the import report's `post_import.cutoffs[astronaut_id]` as `as_of`; `latest_stored_cutoffs` reports physical storage separately. Importing backwards does not delete future rows or set a global API clock.
 7. Create/correct a daily Journal entry with the imported source and effective time. Compare its stable ID, summary and sleep history. Restart FastAPI using the same database, reload and verify persistence. A mock save is session-only; an API save is stored in SQLite.
-8. Stop/restart the API and test visible errors/retry, then keyboard and actual 200% zoom. These browser actions are a remaining manual acceptance sequence, not a claim of checks already performed by the CLI.
+8. Stop/restart the API and test visible errors/retry, then keyboard and actual 200% zoom. Repeat these browser actions for future changes; the current API review is recorded separately from the CLI. Actual 200% zoom and broader assistive/cross-browser checks remain pending.
 
-The automatic transport/persistence subset is verified. Final rendered rehearsal is open in #13/#17/#21/#22, including R1 (API tab blank after environment restart) recorded in the integration runbook. Use the explicitly labeled mock fallback for the illustrative baseline/alert explanation until #14/#15 are integrated. Never present the mock warning as a generated API alert.
+The current transport/persistence and rendered API/Journal subset is verified in [browser acceptance](testing/browser13_acceptance.md); the supported R1 restart recheck passed. The full DATA-04/actual-engine rehearsal remains #21/#22. Use the explicitly labeled mock fallback for the illustrative baseline/alert explanation until #14/#15 are integrated. Never present the mock warning as a generated API alert.

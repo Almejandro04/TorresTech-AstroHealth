@@ -2,6 +2,10 @@
 
 Owners: Jorge (@Almejandro04) and Jhonatan (@TheJhonatan144); data support: Ismael (@BrandonFreire).
 
+## Current browser follow-up
+
+[Browser acceptance and captures](../testing/browser13_acceptance.md) now cover actual API views, range/replay/refresh, no observations, unavailable analysis, offline/retry and persistent Journal create/correct. The supported R1 restart recheck passes and a lost-confirmation defect was fixed. #13/#17 are complete for this frontend scope; full DATA-04/analysis/actual generated alerts and #21/#22 remain pending. Earlier R1/pending-browser statements below are preserved as historical evidence. No actual 200% zoom or broader accessibility review is claimed.
+
 ## Evidence levels after backend integration
 
 | Path | Evidence | Status |

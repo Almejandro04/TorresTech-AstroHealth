@@ -71,6 +71,12 @@ function serverFieldErrors(error: HealthDataError): FieldErrors {
   return errors
 }
 
+interface SaveConfirmation {
+  astronautId: string
+  outcome: 'created' | 'updated'
+  entry: HealthJournal
+}
+
 interface JournalFormProps {
   astronaut: Astronaut
   day: number
@@ -78,9 +84,11 @@ interface JournalFormProps {
   isPastDay: boolean
   viewDay: number | null
   isHistorical: boolean
+  onSaved: (confirmation: SaveConfirmation) => void
+  onEdit: () => void
 }
 
-function JournalForm({ astronaut, day, entry, isPastDay, viewDay, isHistorical }: JournalFormProps) {
+function JournalForm({ astronaut, day, entry, isPastDay, viewDay, isHistorical, onSaved, onEdit }: JournalFormProps) {
   const { source, refresh } = useMission()
   const [saved, setSaved] = useState<HealthJournal | null>(entry)
   const [draft, setDraft] = useState<Draft>(() => draftOf(entry))
@@ -95,7 +103,7 @@ function JournalForm({ astronaut, day, entry, isPastDay, viewDay, isHistorical }
 
   // Wait for React to render feedback before moving keyboard focus to it.
   useEffect(() => {
-    if (save.status === 'saved' || save.status === 'failed') feedbackRef.current?.focus()
+    if (save.status === 'failed') feedbackRef.current?.focus()
   }, [save.status])
 
   const saving = save.status === 'saving'
@@ -117,6 +125,7 @@ function JournalForm({ astronaut, day, entry, isPastDay, viewDay, isHistorical }
   }, [dirty])
 
   const edit = (patch: Partial<Draft>) => {
+    onEdit()
     setDraft((current) => ({ ...current, ...patch }))
     setErrors({})
     if (save.status !== 'saving') setSave({ status: 'idle' })
@@ -147,6 +156,7 @@ function JournalForm({ astronaut, day, entry, isPastDay, viewDay, isHistorical }
       setSaved(result.response.data)
       setDraft(draftOf(result.response.data))
       setSave({ status: 'saved', outcome: result.outcome, entry: result.response.data })
+      onSaved({ astronautId: astronaut.astronaut_id, outcome: result.outcome, entry: result.response.data })
       refresh()
     } catch (caught) {
       const error = toHealthDataError(caught)
@@ -279,15 +289,6 @@ function JournalForm({ astronaut, day, entry, isPastDay, viewDay, isHistorical }
             <p>The data source reported a problem. Your entry is still here.</p>
           </Callout>
         )}
-        {save.status === 'saved' && (
-          <Callout tone="success" title="Journal saved" role="status">
-            <p>
-              Day {save.entry.mission_day} entry <span className="mono">{save.entry.journal_id}</span>{' '}
-              {save.outcome === 'created' ? 'was created.' : 'was updated; its ID is unchanged.'}
-            </p>
-            {source.kind === 'mock' && <p>Demo data source: kept in this page session only. Nothing was sent to a server.</p>}
-          </Callout>
-        )}
       </div>
 
       <div className="journal-form__actions">
@@ -322,6 +323,14 @@ export function JournalPage() {
   const { astronaut, source, asOf, view, viewDay, latestDay, isHistorical, revision, unknownAstronautId } = useMission()
   const [searchParams, setSearchParams] = useSearchParams()
   const dayFieldId = useId()
+  const [confirmation, setConfirmation] = useState<SaveConfirmation | null>(null)
+  const confirmationRef = useRef<HTMLDivElement>(null)
+
+  // The form may remount when the new cutoff reloads history. Keep confirmed
+  // write feedback outside that loading subtree so it remains visible/focused.
+  useEffect(() => {
+    if (confirmation) confirmationRef.current?.focus()
+  }, [confirmation])
 
   const viewReady = view.status === 'ready'
   const entries = useResource(
@@ -342,6 +351,7 @@ export function JournalPage() {
   const entryFor = (day: number) => journal.find((entry) => entry.mission_day === day) ?? null
 
   const selectDay = (day: number) => {
+    setConfirmation(null)
     const next = new URLSearchParams(searchParams)
     next.set('entry', String(day))
     setSearchParams(next)
@@ -350,6 +360,16 @@ export function JournalPage() {
   return (
     <>
       <PageHeader title="Journal" lead="Daily self-report of sleep, mood, and notes. One entry per mission day, which you can correct." />
+
+      {confirmation?.astronautId === astronaut?.astronaut_id && confirmation?.entry.mission_day === selectedDay && (
+        <div ref={confirmationRef} tabIndex={-1} className="journal-form__feedback">
+          <Callout tone="success" title="Journal saved" role="status">
+            <p>Day {confirmation.entry.mission_day} entry <span className="mono">{confirmation.entry.journal_id}</span>{' '}
+              {confirmation.outcome === 'created' ? 'was created.' : 'was updated; its ID is unchanged.'}</p>
+            {source.kind === 'mock' && <p>Demo data source: kept in this page session only. Nothing was sent to a server.</p>}
+          </Callout>
+        </div>
+      )}
 
       {unknownAstronautId && <Callout tone="warning" title="Astronaut profile not found"><p>Choose a profile in the mission bar.</p></Callout>}
       {view.status === 'error' && <ErrorState error={view.error} subject="the mission summary" onRetry={view.retry} />}
@@ -386,6 +406,8 @@ export function JournalPage() {
               isPastDay={viewDay !== null && selectedDay < viewDay}
               viewDay={viewDay}
               isHistorical={isHistorical}
+              onSaved={setConfirmation}
+              onEdit={() => setConfirmation(null)}
             />
           </div>
 

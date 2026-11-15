@@ -1,5 +1,7 @@
 # Integration update — 2026-11-15
 
+> Follow-up: [rendered browser acceptance](browser13_acceptance.md) now completes the current #13/#17 frontend/API and Journal checks. The remaining-acceptance table below is the earlier snapshot; #6/#9/#14/#15/#21/#22 and broader zoom/accessibility still remain open.
+
 ## Delivered and integrated scope
 
 The review started from main 6964d199a7bfbf959fb1818f8bc9af73ff8addf0 after backend PRs #26/#27/#28. Work uses a separate checkout and the branch codex/ingestion-cutoff-and-integration-20261115. Flight Log, the v0.1.0 HTTP contract, shared data fixtures, teammate assignments and other worktrees are preserved.

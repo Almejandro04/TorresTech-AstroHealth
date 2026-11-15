@@ -1,6 +1,10 @@
 # Frontend acceptance evidence
 
-## Current integration status — 2026-11-15
+## Current browser acceptance — 2026-11-15
+
+The [rendered API/Journal review](browser13_acceptance.md) completes #13/#17 for the current supported backend. It supersedes the earlier pending-browser/R1 statements below. DATA-04, actual engine-generated alerts and #21/#22 remain separate.
+
+## Earlier integration status — 2026-11-15
 
 Flight Log and contract v0.1.0 are preserved. The original functional review was based on 0f37777; the backend has since delivered SQLite, REST routes and staged import, and 9e94071 fixes the historical import handoff. The [current integration report](integration_update_20261115.md) supersedes earlier bootstrap-only blocker descriptions.
 
